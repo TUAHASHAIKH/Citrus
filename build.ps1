@@ -15,6 +15,7 @@ finally { if (Test-Path -LiteralPath $iconGenerator) { Remove-Item -LiteralPath 
 $sources = @(Get-ChildItem -LiteralPath (Join-Path $root 'src') -Filter '*.cs' | ForEach-Object { $_.FullName })
 & $compiler /nologo /target:winexe /optimize+ /platform:anycpu /reference:System.Drawing.dll /reference:System.Windows.Forms.dll /reference:System.Runtime.Serialization.dll "/win32icon:$root\assets\citrus.ico" "/resource:$root\assets\citrus.ico,Citrus.Icon" "/out:$out\Citrus.exe" $sources
 if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
+Copy-Item -LiteralPath (Join-Path $root 'LICENSE'), (Join-Path $root 'THIRD_PARTY_NOTICES.md') -Destination $out -Force
 $engineDirectory = Join-Path $out 'engine'
 New-Item -ItemType Directory -Force -Path $engineDirectory | Out-Null
 Copy-Item -LiteralPath (Join-Path $root 'engines\worker.py') -Destination (Join-Path $engineDirectory 'worker.py') -Force

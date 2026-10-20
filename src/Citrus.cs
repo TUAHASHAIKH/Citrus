@@ -240,6 +240,7 @@ namespace Citrus
             menu.Items.Add("Engine status", null, delegate {
                 MessageBox.Show(FormatCatalog.EngineStatus + "\n\n" + string.Join("\n", FormatCatalog.All.GroupBy(route => route.Id.Split('.')[0]).Select(group => group.Key + ": " + group.Count() + " profiles")), "Citrus engines");
             });
+            menu.Items.Add("Licenses and source…", null, delegate { ShowLicenseInformation(); });
             var startup = new ToolStripMenuItem("Start with Windows") { Checked = Startup.Enabled, CheckOnClick = true };
             startup.CheckedChanged += delegate {
                 try { Startup.SetEnabled(startup.Checked); }
@@ -306,6 +307,42 @@ namespace Citrus
             output.Parent.PerformLayout();
             PerformLayout();
             status.Text = files.Length + " file(s) selected. Choose an output format, then Convert.\n" + targets[0].Warning;
+        }
+
+        void ShowLicenseInformation()
+        {
+            using (var dialog = new Form { Text = "Citrus · Licenses and source", StartPosition = FormStartPosition.CenterScreen,
+                ClientSize = new Size(580, 310), MinimizeBox = false, MaximizeBox = false, FormBorderStyle = FormBorderStyle.FixedDialog })
+            {
+                var text = new TextBox { Multiline = true, ReadOnly = true, BorderStyle = BorderStyle.None,
+                    Location = new Point(20, 20), Size = new Size(540, 200), BackColor = dialog.BackColor,
+                    Text = "Citrus " + Application.ProductVersion + "\r\nCopyright (c) Citrus contributors.\r\n\r\n" +
+                        "Citrus is free software under the GNU Affero General Public License, version 3. " +
+                        "You may modify and redistribute it under that license. There is no warranty.\r\n\r\n" +
+                        "Conversion engines have separate licenses. Their notices and source information are included with the installation. " +
+                        "Citrus's license does not replace those terms." };
+                var notices = new Button { Text = "Third-party notices", Location = new Point(20, 240), Size = new Size(170, 36) };
+                var license = new Button { Text = "Citrus license", Location = new Point(200, 240), Size = new Size(145, 36) };
+                var source = new Button { Text = "Citrus source", Location = new Point(355, 240), Size = new Size(145, 36) };
+                Action<string> open = delegate(string path) {
+                    try {
+                        if (File.Exists(path)) {
+                            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(
+                                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "notepad.exe"), "\"" + path + "\"") { UseShellExecute = false });
+                        } else if (path.StartsWith("https://", StringComparison.OrdinalIgnoreCase)) {
+                            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(path) { UseShellExecute = true });
+                        } else {
+                            throw new FileNotFoundException("The license document is missing from this installation.", path);
+                        }
+                    }
+                    catch (Exception ex) { MessageBox.Show(dialog, "Could not open the document: " + ex.Message, "Citrus"); }
+                };
+                notices.Click += delegate { open(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "THIRD_PARTY_NOTICES.md")); };
+                license.Click += delegate { open(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "LICENSE")); };
+                source.Click += delegate { open("https://github.com/TUAHASHAIKH/Citrus"); };
+                dialog.Controls.AddRange(new Control[] { text, notices, license, source });
+                dialog.ShowDialog();
+            }
         }
 
         void ShowSettings()
