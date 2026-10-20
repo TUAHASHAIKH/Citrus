@@ -1,0 +1,31 @@
+CITRUS — IMAGE CONVERTER
+
+DRAG TO CONVERT
+1. Drag Sample.jpg in Explorer, then tap Shift.
+   Holding Shift before dragging also works.
+2. Keep holding the mouse. Release Shift when the wheel appears.
+3. Move onto PNG, BMP, or TIFF. The selected wedge turns orange.
+4. Release the mouse to convert. The result appears in this folder.
+
+Drag one of your PNG results to see JPG, BMP, and TIFF choices.
+The center and gaps are neutral. Escape cancels.
+
+FILE PICKER
+1. Double-click Citrus.exe.
+2. Click Choose images… and select Sample.jpg or your own images.
+3. Select Output format, then click Convert.
+
+SUPPORTED: JPG/JPEG, PNG, BMP, and single-page TIF/TIFF.
+Mixed batches offer only formats shared by every selected image.
+JPG/BMP put transparent areas on white. Originals are preserved.
+Repeated conversions create numbered files instead of overwriting.
+Sample.jpg is a small solid-color test image, not a photograph.
+
+BACKGROUND AND SETTINGS
+Closing with X keeps Citrus active in the tray.
+Right-click the orange-and-leaf icon for Settings:
+- Shift, Alt or Control trigger.
+- JPEG quality, appearance and reduced animation.
+- Pause drag-to-convert or toggle Start with Windows.
+- Exit Citrus to fully stop the app.
+Keep this folder in place so Windows startup can find Citrus.exe.
