@@ -26,6 +26,8 @@ namespace Citrus
     [DataContract] class EngineRuntime {
         [DataMember] public string Python = "";
         [DataMember] public string Libraries = "";
+        [DataMember] public string Office = "";
+        [DataMember] public string FFmpeg = "";
     }
     [DataContract] class WorkerRequest {
         [DataMember] public string Source;
@@ -87,11 +89,17 @@ namespace Citrus
         static readonly string engineDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "engine");
         static ProcessStartInfo Python(string arguments) {
             var runtime = Read<EngineRuntime>(Path.Combine(engineDirectory, "runtime.json"));
-            if (!File.Exists(runtime.Python)) throw new IOException("Python engine is not configured.");
-            var info = Info(runtime.Python, Quote(Path.Combine(engineDirectory, "worker.py")) + " " + arguments);
-            info.EnvironmentVariables["CITRUS_LIBRARIES"] = runtime.Libraries ?? "";
+            string python = ResolveRuntimePath(runtime.Python);
+            if (!File.Exists(python)) throw new IOException("Python engine is not configured.");
+            var info = Info(python, Quote(Path.Combine(engineDirectory, "worker.py")) + " " + arguments);
+            info.EnvironmentVariables["CITRUS_LIBRARIES"] = ResolveRuntimePath(runtime.Libraries);
+            if (!string.IsNullOrEmpty(runtime.Office)) info.EnvironmentVariables["CITRUS_OFFICE"] = ResolveRuntimePath(runtime.Office);
+            if (!string.IsNullOrEmpty(runtime.FFmpeg)) info.EnvironmentVariables["CITRUS_FFMPEG"] = ResolveRuntimePath(runtime.FFmpeg);
             info.EnvironmentVariables["PYTHONIOENCODING"] = "utf-8";
             return info;
+        }
+        static string ResolveRuntimePath(string path) {
+            return string.IsNullOrEmpty(path) ? "" : Path.GetFullPath(Path.IsPathRooted(path) ? path : Path.Combine(engineDirectory, path));
         }
         static ProcessStartInfo Info(string file, string args) {
             return new ProcessStartInfo(file, args) { UseShellExecute = false, CreateNoWindow = true,

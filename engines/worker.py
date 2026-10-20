@@ -35,6 +35,9 @@ def available(name):
 
 
 def ffmpeg():
+    if os.environ.get("CITRUS_FFMPEG"):
+        candidate = Path(os.environ["CITRUS_FFMPEG"])
+        return str(candidate) if candidate.is_file() else None
     binary = shutil.which("ffmpeg")
     if not binary and available("imageio_ffmpeg"):
         import imageio_ffmpeg
@@ -43,6 +46,9 @@ def ffmpeg():
 
 
 def office():
+    if os.environ.get("CITRUS_OFFICE"):
+        candidate = Path(os.environ["CITRUS_OFFICE"])
+        return str(candidate) if candidate.is_file() else None
     return shutil.which("soffice") or next((str(p) for p in [
         Path(os.environ.get("PROGRAMFILES", "C:/Program Files")) / "LibreOffice/program/soffice.exe",
         Path(os.environ.get("PROGRAMFILES(X86)", "C:/Program Files (x86)")) / "LibreOffice/program/soffice.exe"

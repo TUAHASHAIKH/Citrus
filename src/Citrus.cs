@@ -17,6 +17,7 @@ namespace Citrus
     static class Program
     {
         public static EventWaitHandle ShowRequested;
+        public static EventWaitHandle ShutdownRequested;
         static string ShowEventName;
         [STAThread]
         static void Main(string[] args)
@@ -36,7 +37,22 @@ namespace Citrus
             // Keep the single-instance guard and activation signal local to this desktop.
             string desktop = Native.DesktopName();
             ShowEventName = "Local.Citrus.ShowWindow." + desktop;
-            using (var mutex = new Mutex(true, "Local.Citrus.JpegPrototype." + desktop, out created))
+            string shutdownEvent = "Local.Citrus.Shutdown." + desktop;
+            string mutexName = "Local.Citrus.JpegPrototype." + desktop;
+            if (Array.IndexOf(args, "--shutdown") >= 0) {
+                try {
+                    using (var signal = EventWaitHandle.OpenExisting(shutdownEvent)) signal.Set();
+                    using (var existing = Mutex.OpenExisting(mutexName)) {
+                        bool acquired = false;
+                        try { acquired = existing.WaitOne(30000); }
+                        catch (AbandonedMutexException) { acquired = true; }
+                        if (acquired) existing.ReleaseMutex(); else Environment.ExitCode = 2;
+                    }
+                }
+                catch (WaitHandleCannotBeOpenedException) { }
+                return;
+            }
+            using (var mutex = new Mutex(true, mutexName, out created))
             {
                 if (!created)
                 {
@@ -45,11 +61,13 @@ namespace Citrus
                     return;
                 }
                 ShowRequested = new EventWaitHandle(false, EventResetMode.AutoReset, ShowEventName);
+                ShutdownRequested = new EventWaitHandle(false, EventResetMode.AutoReset, shutdownEvent);
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
                 int availableProfiles = FormatCatalog.All.Count;
                 Application.Run(new MainWindow(background));
                 ShowRequested.Dispose();
+                ShutdownRequested.Dispose();
             }
         }
     }
@@ -347,6 +365,9 @@ namespace Citrus
 
         void Observe(object sender, EventArgs e)
         {
+            if (Program.ShutdownRequested != null && Program.ShutdownRequested.WaitOne(0)) {
+                exitRequested = true; pending.Clear(); queueEpoch++; startingNext = false; Close(); return;
+            }
             if (Program.ShowRequested != null && Program.ShowRequested.WaitOne(0)) OpenWindow();
             bool left = Native.Down(1), shift = Native.Down(settings.TriggerKey);
             Point point = Cursor.Position;

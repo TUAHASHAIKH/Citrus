@@ -4,6 +4,12 @@ Research date: 20 October 2026. The original proposal follows the implementation
 
 ## Current implementation checkpoint
 
+### Installer release candidate
+
+`tools/Build-Setup.ps1` prepares a self-contained x64 Python runtime and all Python engines, FFmpeg and LibreOffice, then produces an Inno Setup installer. Installed configuration uses relative paths and explicit bundled FFmpeg/Office executables. Setup installs per user, offers sign-in startup, launches into the tray, and includes a Microsoft-signed VC++ prerequisite for machines lacking a compatible runtime. The installed app exposes a graceful shutdown signal for upgrades/uninstall, including cancellation of queued/active work. Uninstall preserves user settings and converted files and removes only its own startup registration.
+
+`tools/Test-Setup.ps1` covers isolated install, installed-app regressions with Python absent from PATH, reinstall and uninstall; the local run passed. `tools/Test-TrayLifecycle.ps1` separately passed the real background entry point, duplicate launch and graceful shutdown on an isolated Windows desktop. `tools/Inventory-Engines.py` records actual package versions and binary hashes. Citrus is now AGPL-3.0 following the owner's open-source release decision. See RELEASE.md for the exact installer workflow and remaining public-release gates: signing, corresponding third-party sources/build materials, and clean Windows VM/manual interaction acceptance. No subscription service or billing backend is implemented.
+
 ### Expanded converter iteration
 
 The current iteration adds a glass-style shell and ring with rounded controls, highlights, tinted surfaces and Windows native backdrop/frame requests with fallback. A shared runtime catalog now connects built-in image codecs, Pillow/HEIF/AVIF, FFmpeg, PyMuPDF, python-docx/python-pptx, openpyxl, standard-library archives/subtitles and installed LibreOffice.
@@ -16,7 +22,7 @@ The wheel uses six stable slots, with a dwell-operated More wedge for larger cat
 
 Validation includes generated representative input for every advertised Python worker profile, plus the original image suite, glass/layout checks, Unicode paths, source preservation, PDF page/table semantics, subtitle timing, archive traversal rejection, safe spreadsheet cell imports, pure JSON worker responses, failure cleanup, process-tree termination and queue lifecycle checks. This is not exhaustive validation of every source/target edge, layout, codec variant or Windows drag source.
 
-Remaining: persistent job journal/recovery/history/retry; richer streaming progress; OCR; RAR; native Pages/AirDrop equivalents; interactive crop/annotation/redaction/trim editors; broad manual mixed-DPI/high-contrast/application compatibility; a signed, self-contained installer and engine-distribution compliance work. Python runtime/configuration is machine-local in this development build. Full Tangerine parity is not declared complete.
+Remaining: persistent job journal/recovery/history/retry; richer streaming progress; OCR; RAR; native Pages/AirDrop equivalents; interactive crop/annotation/redaction/trim editors; broad manual mixed-DPI/high-contrast/application compatibility; installer signing and engine-distribution compliance work. Developer builds use machine-local runtime configuration; setup builds bundle their runtime. Full Tangerine parity is not declared complete.
 
 ### Earlier image-shell checkpoint
 

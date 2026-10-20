@@ -33,6 +33,7 @@ namespace Citrus
         static void CheckProcessTree()
         {
             var runtime = EngineBridge.Read<EngineRuntime>(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "engine", "runtime.json"));
+            if (!Path.IsPathRooted(runtime.Python)) runtime.Python = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "engine", runtime.Python);
             string script = "import subprocess,sys,time;p=subprocess.Popen([sys.executable,'-c','import time;time.sleep(60)']);print(p.pid,flush=True);time.sleep(60)";
             using (var job = new ProcessJob())
             using (var process = Process.Start(new ProcessStartInfo(runtime.Python, "-c " + EngineBridge.Quote(script)) {

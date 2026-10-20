@@ -2,6 +2,8 @@
 
 An offline Windows converter with a glass-style interface and a format wheel beside your cursor.
 
+Licensed under **AGPL-3.0**; see [LICENSE](LICENSE). For the downloadable Windows setup workflow, bundled engines, build/test commands and remaining public-release gates, see [RELEASE.md](RELEASE.md). The installer is currently a local unsigned release candidate.
+
 ## Use it
 
 Citrus is running in the background. Drag a file, tap **Shift**, release Shift while keeping the mouse held, then drop onto a named wedge. The hovered choice turns orange. Hold over **More →** for about 0.65 seconds to cycle to the next page; move away before using More again. The center and gaps are neutral. Escape cancels.
