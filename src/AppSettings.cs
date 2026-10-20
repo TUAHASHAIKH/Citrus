@@ -95,7 +95,7 @@ namespace Citrus
         }
     }
 
-    class SettingsWindow : Form
+    class SettingsWindow : GlassWindow
     {
         readonly ComboBox trigger = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
         readonly ComboBox theme = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
@@ -106,6 +106,7 @@ namespace Citrus
         public SettingsWindow(AppSettings current)
         {
             Text = "Citrus settings";
+            GlassPalette = Palette.For(current);
             Font = new Font("Segoe UI", 10);
             AutoScaleDimensions = new SizeF(96, 96); AutoScaleMode = AutoScaleMode.Dpi;
             AutoSize = true; AutoSizeMode = AutoSizeMode.GrowAndShrink;
@@ -124,8 +125,8 @@ namespace Citrus
                 Text = "Transparent pixels become white in JPG and BMP. Outputs stay beside the originals.\n\nPress the trigger while dragging, then release it before dropping.",
                 Margin = new Padding(0, 16, 0, 16) };
             panel.Controls.Add(note, 0, 5); panel.SetColumnSpan(note, 2);
-            var save = new Button { Text = "Save", AutoSize = true, Padding = new Padding(12, 5, 12, 5) };
-            var cancel = new Button { Text = "Cancel", AutoSize = true, DialogResult = DialogResult.Cancel, Padding = new Padding(12, 5, 12, 5) };
+            var save = new GlassButton { Text = "Save", AutoSize = true, Padding = new Padding(12, 5, 12, 5) };
+            var cancel = new GlassButton { Text = "Cancel", AutoSize = true, DialogResult = DialogResult.Cancel, Padding = new Padding(12, 5, 12, 5) };
             var buttons = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.RightToLeft, Dock = DockStyle.Fill };
             buttons.Controls.AddRange(new Control[] { cancel, save });
             panel.Controls.Add(buttons, 0, 6); panel.SetColumnSpan(buttons, 2);
@@ -136,6 +137,8 @@ namespace Citrus
                 catch (Exception ex) { MessageBox.Show(this, "Could not save settings: " + ex.Message, "Citrus", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
             };
             AcceptButton = save; CancelButton = cancel; Controls.Add(panel);
+            Tint(this, GlassPalette);
+            save.BackColor = GlassPalette.Accent; save.ForeColor = GlassPalette.AccentText;
         }
         static void AddRow(TableLayoutPanel panel, string text, Control control, int row)
         {

@@ -2,6 +2,9 @@
 bin/
 obj/
 artifacts/
+.engines/
+**/__pycache__/
+*.pyc
 test-output/
 TestResults/
 *.pdb

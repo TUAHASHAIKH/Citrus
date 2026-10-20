@@ -70,12 +70,12 @@ namespace Citrus
         }
     }
 
-    class MainWindow : Form
+    class MainWindow : GlassWindow
     {
         readonly Label status = new Label();
-        readonly Button choose = new Button();
-        readonly Button cancel = new Button();
-        readonly Button convert = new Button();
+        readonly Button choose = new GlassButton();
+        readonly Button cancel = new GlassButton();
+        readonly Button convert = new GlassButton();
         readonly ComboBox output = new ComboBox();
         readonly Label hint;
         readonly ToolStripMenuItem gestureMenu;
@@ -156,7 +156,7 @@ namespace Citrus
             status.ForeColor = Color.FromArgb(190, 200, 190);
             var buttons = new FlowLayoutPanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
                 WrapContents = false, Margin = Padding.Empty };
-            var settingsButton = new Button { Text = "Settings", AutoSize = true, Padding = new Padding(12, 9, 12, 9) };
+            var settingsButton = new GlassButton { Text = "Settings", AutoSize = true, Padding = new Padding(12, 9, 12, 9) };
             settingsButton.Click += delegate { ShowSettings(); };
             buttons.Controls.AddRange(new Control[] { choose, convert, cancel, settingsButton });
             var outputRow = new FlowLayoutPanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
@@ -270,6 +270,7 @@ namespace Citrus
         void ApplySettings()
         {
             Colors = Palette.For(settings);
+            GlassPalette = Colors;
             ApplyColors(this);
             hint.Text = "Drag an image and tap " + settings.Trigger + " to choose a format.\nJPG · PNG · BMP · TIFF — always offline.";
             hint.ForeColor = Colors.Muted; status.ForeColor = Colors.Muted;
@@ -289,7 +290,7 @@ namespace Citrus
 
         void ApplyColors(Control parent)
         {
-            parent.BackColor = Colors.Background; parent.ForeColor = Colors.Text;
+            parent.BackColor = parent is Panel || parent is Label ? Color.Transparent : Colors.Background; parent.ForeColor = Colors.Text;
             var button = parent as Button;
             if (button != null) { button.FlatStyle = FlatStyle.Flat; button.BackColor = Colors.Segment; }
             foreach (Control child in parent.Controls) ApplyColors(child);
@@ -408,7 +409,7 @@ namespace Citrus
         }
     }
 
-    class DropWheel : Form
+    class DropWheel : GlassWindow
     {
         readonly MainWindow owner;
         readonly System.Windows.Forms.Timer animation;
@@ -473,6 +474,7 @@ namespace Citrus
             Rectangle area = Screen.FromPoint(point).WorkingArea;
             Location = PlaceNearCursor(point, area, diameter);
             BackColor = owner.Colors.Background;
+            GlassPalette = owner.Colors;
             Show();
             if (owner.Preferences.ReducedMotion || !SystemInformation.IsMenuAnimationEnabled) { reveal = 1; Invalidate(); }
             else animation.Start();
@@ -518,8 +520,10 @@ namespace Citrus
                     (int)(palette.Background.R + (fill.R - palette.Background.R) * reveal),
                     (int)(palette.Background.G + (fill.G - palette.Background.G) * reveal),
                     (int)(palette.Background.B + (fill.B - palette.Background.B) * reveal));
-                using (var path = RingGeometry.Wedge(i, count))
-                using (var brush = new SolidBrush(fill)) g.FillPath(brush, path);
+                using (var path = RingGeometry.Wedge(i, count)) {
+                    using (var brush = new LinearGradientBrush(new Rectangle(0, 0, 240, 240), ControlPaint.Light(fill, .14f), fill, 100f)) g.FillPath(brush, path);
+                    using (var edge = new Pen(Color.FromArgb(selected ? 120 : 48, Color.White), 1)) g.DrawPath(edge, path);
+                }
                 PointF label = RingGeometry.LabelPoint(i, count);
                 using (var text = new SolidBrush(selected ? palette.AccentText : palette.Text))
                     g.DrawString(targets.Length == 0 ? "·" : ImageRoutes.Label(targets[i]), font, text,
