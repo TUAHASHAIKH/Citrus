@@ -2,6 +2,8 @@
 
 This is an offline desktop product with a setup installer. No account, subscription enforcement, payments, hosted conversion service or automatic updater is implemented.
 
+For the current announcement scope, see [docs/RELEASE_STATUS.md](docs/RELEASE_STATUS.md). The [LinkedIn draft](docs/LINKEDIN_POST.md) announces a source preview; it does not offer the uncleared installer. Fresh-machine evidence must follow [docs/WINDOWS_ACCEPTANCE.md](docs/WINDOWS_ACCEPTANCE.md). Dependency source collection and unresolved provenance are tracked in [docs/SOURCE_REVIEW.md](docs/SOURCE_REVIEW.md).
+
 ## Installation experience
 
 Run `artifacts/setup/Citrus-Setup-0.3.0-x64.exe`, accept the AGPL license, keep the default sign-in startup option, and finish. Citrus launches into the Windows system tray. Windows may place it in the overflow menu; drag the icon beside the clock to keep it visible. The installer does not override Windows tray preferences.

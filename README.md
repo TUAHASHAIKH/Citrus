@@ -2,11 +2,15 @@
 
 An offline Windows converter with a glass-style interface and a format wheel beside your cursor.
 
+<img src="assets/citrus.png" alt="Citrus logo" width="96">
+
+**Open-source development preview.** Source is available here; the full installer has not been published. Local checks have passed, but clean-Windows acceptance and third-party source review remain open. See [release status](docs/RELEASE_STATUS.md) and [testing guide](docs/WINDOWS_ACCEPTANCE.md).
+
 Licensed under **AGPL-3.0**; see [LICENSE](LICENSE). For the downloadable Windows setup workflow, bundled engines, build/test commands and remaining public-release gates, see [RELEASE.md](RELEASE.md). The installer is currently a local unsigned release candidate.
 
 ## Use it
 
-Citrus is running in the background. Drag a file, tap **Shift**, release Shift while keeping the mouse held, then drop onto a named wedge. The hovered choice turns orange. Hold over **More →** for about 0.65 seconds to cycle to the next page; move away before using More again. The center and gaps are neutral. Escape cancels.
+Start Citrus, then drag a file, tap **Shift**, release Shift while keeping the mouse held, and drop onto a named wedge. The hovered choice turns orange. Hold over **More →** for about 0.65 seconds to cycle to the next page; move away before using More again. The center and gaps are neutral. Escape cancels.
 
 Double-click **Try Citrus/Citrus.exe** for the file picker: **Choose files… → Format / action → Convert**. Closing the window keeps Citrus in the tray. Right-click the orange-and-leaf tray icon for settings, engine status, cancel-all, output-folder access, Windows startup, and Exit.
 
