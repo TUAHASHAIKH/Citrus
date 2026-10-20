@@ -114,6 +114,99 @@ class EngineTests(unittest.TestCase):
             worker.archive_convert(path, "tar", self.root / "unsafe.tar")
         self.assertFalse((self.root / "escaped.txt").exists())
 
+    def test_pdf_word_layout(self):
+        if not worker.available("pdf2docx"):
+            self.skipTest("Layout engine unavailable")
+        import io
+        import pymupdf as fitz
+        from PIL import Image
+        from docx import Document
+        source = self.root / "formatted.pdf"
+        image = io.BytesIO()
+        Image.new("RGB", (80, 40), "orange").save(image, "PNG")
+        with fitz.open() as pdf:
+            page = pdf.new_page(width=595, height=842)
+            page.insert_text((60, 80), "Layout heading", fontname="hebo", fontsize=22, color=(0, 0, 1))
+            page.insert_text((60, 120), "Body in Times", fontname="tiro", fontsize=13)
+            page.insert_text((60, 150), "Italic emphasis", fontname="heit", fontsize=13)
+            for x in [60, 240, 420]: page.draw_line((x, 190), (x, 270))
+            for y in [190, 230, 270]: page.draw_line((60, y), (420, y))
+            for x, y, text in [(70, 215, "Product"), (250, 215, "Price"), (70, 255, "Citrus"), (250, 255, "42")]:
+                page.insert_text((x, y), text, fontsize=12)
+            page.insert_image(fitz.Rect(60, 310, 180, 370), stream=image.getvalue())
+            pdf.new_page(width=595, height=842)  # Intentional blank page must survive.
+            page = pdf.new_page(width=842, height=595)
+            page.insert_text((60, 80), "Landscape final page", fontname="tiro", fontsize=16)
+            pdf.save(source)
+        original = hashlib.sha256(source.read_bytes()).hexdigest()
+        result = worker.pdf_convert(source, "docx", self.root / "formatted.docx")
+        document = Document(result)
+        runs = [run for paragraph in document.paragraphs for run in paragraph.runs]
+        heading = next(run for run in runs if "Layout heading" in run.text)
+        self.assertAlmostEqual(heading.font.size.pt, 22, delta=0.5)
+        self.assertTrue(heading.bold)
+        self.assertEqual(str(heading.font.color.rgb), "0000FF")
+        body = next(run for run in runs if "Body in Times" in run.text)
+        self.assertIn("Times", body.font.name)
+        self.assertAlmostEqual(body.font.size.pt, 13, delta=0.5)
+        self.assertTrue(next(run for run in runs if "Italic emphasis" in run.text).italic)
+        self.assertTrue(any(paragraph.paragraph_format.space_before or paragraph.paragraph_format.line_spacing
+                            for paragraph in document.paragraphs))
+        self.assertTrue(any([[cell.text for cell in row.cells] for row in table.rows] == [["Product", "Price"], ["Citrus", "42"]]
+                            for table in document.tables), "PDF table must become editable Word cells")
+        self.assertGreaterEqual(len(document.part._element.xpath(".//w:drawing")), 1)
+        self.assertGreaterEqual(len(document.sections), 3)
+        self.assertAlmostEqual(document.sections[0].page_width.pt, 595, delta=1)
+        self.assertAlmostEqual(document.sections[-1].page_width.pt, 842, delta=1)
+        self.assertEqual(original, hashlib.sha256(source.read_bytes()).hexdigest())
+        if worker.office():
+            rendered = self.root / "layout-render"; rendered.mkdir(exist_ok=True)
+            profile = (self.root / "layout-office-profile").as_uri()
+            worker.run_process([worker.office(), "-env:UserInstallation=" + profile, "--headless", "--convert-to", "pdf", "--outdir", str(rendered), str(result)])
+            with fitz.open(rendered / "formatted.pdf") as pdf:
+                self.assertEqual(len(pdf), 3, "Rendered Word file must retain the fixture's three pages")
+                self.assertIn("Layout heading", pdf[0].get_text())
+                self.assertFalse(pdf[1].get_text().strip())
+                self.assertIn("Landscape final page", pdf[2].get_text())
+                self.assertAlmostEqual(pdf[2].rect.width, 842, delta=2)
+
+    def test_pdf_word_leading_trailing_blank_pages(self):
+        if not worker.available("pdf2docx"):
+            self.skipTest("Layout engine unavailable")
+        import pymupdf as fitz
+        from docx import Document
+        source = self.root / "blank-edges.pdf"
+        with fitz.open() as pdf:
+            pdf.new_page()
+            page = pdf.new_page(); page.insert_text((72, 72), "Only the middle page has text")
+            pdf.new_page(); pdf.save(source)
+        result = worker.pdf_convert(source, "docx", self.root / "blank-edges.docx")
+        self.assertEqual(len(Document(result).sections), 3)
+        if worker.office():
+            rendered = self.root / "blank-render"; rendered.mkdir(exist_ok=True)
+            profile = (self.root / "blank-office-profile").as_uri()
+            worker.run_process([worker.office(), "-env:UserInstallation=" + profile, "--headless", "--convert-to", "pdf", "--outdir", str(rendered), str(result)])
+            with fitz.open(rendered / "blank-edges.pdf") as pdf:
+                self.assertEqual(len(pdf), 3)
+                self.assertFalse(pdf[0].get_text().strip())
+                self.assertIn("Only the middle", pdf[1].get_text())
+                self.assertFalse(pdf[2].get_text().strip())
+
+    def test_pdf_word_scan_rejected(self):
+        if not worker.available("pdf2docx"):
+            self.skipTest("Layout engine unavailable")
+        import io
+        import pymupdf as fitz
+        from PIL import Image
+        source = self.root / "scan-word.pdf"
+        image = io.BytesIO(); Image.new("RGB", (100, 100), "white").save(image, "PNG")
+        with fitz.open() as pdf:
+            page = pdf.new_page(); page.insert_image(page.rect, stream=image.getvalue()); pdf.save(source)
+        output = self.root / "scan-word.docx"
+        with self.assertRaisesRegex(ValueError, "OCR"):
+            worker.pdf_convert(source, "docx", output)
+        self.assertFalse(output.exists())
+
     def test_cli_stdout_is_only_json(self):
         import subprocess
         request = self.root / "request.json"

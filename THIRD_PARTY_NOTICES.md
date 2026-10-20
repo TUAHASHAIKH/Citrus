@@ -10,6 +10,8 @@ Citrus uses Windows/.NET APIs and can launch separately installed conversion eng
 | FFmpeg | Build-dependent LGPL/GPL; https://ffmpeg.org/legal.html |
 | PyMuPDF / MuPDF | GNU AGPL 3.0 or Artifex commercial license; https://pymupdf.readthedocs.io/en/latest/about.html |
 | python-docx | MIT; https://github.com/python-openxml/python-docx |
+| pdf2docx 0.5.13 | MIT wrapper; uses separately licensed native dependencies, including PyMuPDF; https://github.com/ArtifexSoftware/pdf2docx |
+| fonttools / NumPy / OpenCV headless / Fire / termcolor | Retain their bundled licenses and native-library notices; package metadata is included with the runtime |
 | python-pptx | MIT; https://github.com/scanny/python-pptx |
 | openpyxl | MIT; https://openpyxl.readthedocs.io/ |
 | Beautiful Soup | MIT; https://www.crummy.com/software/BeautifulSoup/ |

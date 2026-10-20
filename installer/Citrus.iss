@@ -4,7 +4,7 @@
 #ifndef ReleaseOutput
   #error ReleaseOutput must be specified
 #endif
-#define Version "0.3.0"
+#define Version "0.3.1"
 
 [Setup]
 AppId={{8BA05164-740A-4B45-A8B2-93D589747B51}

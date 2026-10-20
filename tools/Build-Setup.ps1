@@ -18,7 +18,7 @@ $ready = Join-Path $runtime 'complete.txt'
 $requirements = Join-Path $project 'engines\requirements.txt'
 $fingerprint = (Get-FileHash -LiteralPath $requirements -Algorithm SHA256).Hash
 if ($RefreshEngines -or !(Test-Path -LiteralPath $ready) -or (Get-Content -LiteralPath $ready -Raw).Trim() -ne $fingerprint) {
-    & python -c 'import sys,struct; assert sys.version_info[:2] == (3,13) and struct.calcsize("P") == 8, "Engine preparation requires Python 3.13 x64"'
+    & python -c 'import sys,struct; assert sys.version_info[:2] == (3,13) and struct.calcsize(chr(80)) == 8'
     if ($LASTEXITCODE -ne 0) { throw 'Use Python 3.13 x64 to prepare the embedded engine packages.' }
     New-Item -ItemType Directory -Force $runtime | Out-Null
     $archive = Join-Path $cache "python-$PythonVersion-embed-amd64.zip"
@@ -81,7 +81,7 @@ try {
 if ($LASTEXITCODE -ne 0) { throw 'Engine inventory failed.' }
 & $Compiler "/DPayload=$payload" "/DReleaseOutput=$output" "/DRuntimeMinor=$runtimeMinor" (Join-Path $project 'installer\Citrus.iss')
 if ($LASTEXITCODE -ne 0) { throw 'Setup compiler failed.' }
-$setup = Join-Path $output 'Citrus-Setup-0.3.0-x64.exe'
+$setup = Join-Path $output 'Citrus-Setup-0.3.1-x64.exe'
 Get-FileHash -LiteralPath $setup -Algorithm SHA256 | Format-List
 $hash = (Get-FileHash -LiteralPath $setup -Algorithm SHA256).Hash.ToLowerInvariant()
 "$hash  $([IO.Path]::GetFileName($setup))" | Set-Content -LiteralPath (Join-Path $output 'SHA256SUMS.txt') -Encoding Ascii

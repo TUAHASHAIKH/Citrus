@@ -15,11 +15,20 @@ namespace Citrus
         public static void Run(string root)
         {
             string folder = Path.Combine(root, "engine bridge Ω"); Directory.CreateDirectory(folder);
+            string bomConfig = Path.Combine(folder, "runtime-bom.json");
+            File.WriteAllText(bomConfig, "{\"Python\":\"portable/python.exe\"}", new System.Text.UTF8Encoding(true));
+            Assert(EngineBridge.Read<EngineRuntime>(bomConfig).Python == "portable/python.exe", "UTF-8 BOM runtime configuration is accepted");
             string text = Path.Combine(folder, "notes.txt"); File.WriteAllText(text, "Citrus engine bridge test");
             var pdf = FormatCatalog.Targets(new string[] { text }).FirstOrDefault(route => route.Id == "text.pdf");
             if (pdf == null) { File.WriteAllText(Path.Combine(folder, "optional-engines.txt"), FormatCatalog.EngineStatus); return; }
             string output = EngineBridge.Convert(text, pdf, 90, CancellationToken.None);
             Assert(File.ReadAllBytes(output).Take(4).SequenceEqual(new byte[] { 37, 80, 68, 70 }), "Python worker publishes actual PDF");
+            var word = FormatCatalog.Targets(new string[] { output }).FirstOrDefault(route => route.Id == "pdf.docx");
+            if (word != null) {
+                Assert(word.Label == "Word (layout)", "Word route advertises layout reconstruction");
+                string wordOutput = EngineBridge.Convert(output, word, 90, CancellationToken.None);
+                Assert(File.ReadAllBytes(wordOutput).Take(2).SequenceEqual(new byte[] { 80, 75 }), "layout Word worker returns a DOCX package through the app bridge");
+            }
             var cancelled = new CancellationTokenSource(); cancelled.Cancel(); bool rejected = false;
             try { EngineBridge.Convert(text, pdf, 90, cancelled.Token); } catch (OperationCanceledException) { rejected = true; }
             Assert(rejected && Directory.GetDirectories(folder, ".citrus-work-*").Length == 0, "cancelled worker staging cleaned");

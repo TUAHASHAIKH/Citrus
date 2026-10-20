@@ -1,7 +1,7 @@
 param([string]$Setup = '')
 $ErrorActionPreference = 'Stop'
 $project = Split-Path $PSScriptRoot -Parent
-if (!$Setup) { $Setup = Join-Path $project 'artifacts\setup\Citrus-Setup-0.3.0-x64.exe' }
+if (!$Setup) { $Setup = Join-Path $project 'artifacts\setup\Citrus-Setup-0.3.1-x64.exe' }
 $key = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{8BA05164-740A-4B45-A8B2-93D589747B51}_is1'
 if (Test-Path -LiteralPath $key) { throw 'Citrus is already installed. Use a clean Windows account/VM for the isolated installer test.' }
 $startupKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
@@ -25,7 +25,7 @@ try {
         $process = Start-Process -FilePath (Join-Path $installed 'Citrus.exe') -WorkingDirectory $checks -ArgumentList '--self-test', '.' -WindowStyle Hidden -Wait -PassThru
         Get-Content -LiteralPath (Join-Path $checks 'results.txt')
         if ($process.ExitCode -ne 0) { throw 'Installed-app regressions failed.' }
-        if (Test-Path -LiteralPath (Join-Path $checks 'engine bridge Ω\optional-engines.txt')) { throw 'Installed app fell back to native-only conversion.' }
+        if (Get-ChildItem -LiteralPath $checks -Recurse -File -Filter optional-engines.txt) { throw 'Installed app fell back to native-only conversion.' }
     } finally { $env:PATH = $oldPath }
     # Install the same setup over itself to verify the upgrade path.
     $process = Start-Process -FilePath $Setup -ArgumentList $arguments -WindowStyle Hidden -Wait -PassThru

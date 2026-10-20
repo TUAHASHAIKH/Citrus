@@ -21,7 +21,7 @@ Double-click **Try Citrus/Citrus.exe** for the file picker: **Choose files… �
 | Images | JPG, PNG, BMP, single-page TIFF, WebP, AVIF, HEIC/HEIF; PDF export; combine images into a PDF; resize 50%; compress to JPEG |
 | Audio | MP3, M4A, WAV, FLAC, OGG, Opus, AIFF, WMA; normalize to WAV |
 | Video | MP4, MOV, MKV, WebM, AVI, WMV, GIF; M4V input; audio extraction; mute video |
-| PDF | All pages to PNG/JPG at 300 DPI; TXT/Markdown/EPUB text; DOCX paragraphs; PPTX rendered slides; XLSX detected tables; merge, split, compress |
+| PDF | All pages to PNG/JPG at 300 DPI; TXT/Markdown/EPUB text; Word with editable layout/tables/images; PPTX rendered slides; XLSX detected tables; merge, split, compress |
 | Documents | DOC/DOCX/ODT/RTF through LibreOffice; TXT/Markdown/HTML/EPUB text conversions and DOCX/PDF text export |
 | Slides | PPT/PPTX/ODP to PDF, PPTX/ODP, or all pages as PNG/JPG |
 | Spreadsheets | XLS/XLSX/ODS/CSV/TSV to XLSX/ODS/CSV/TSV/PDF where applicable |
@@ -35,7 +35,7 @@ The runtime catalog hides profiles whose required local engines/encoders are una
 
 - Originals are preserved. Output names gain numeric suffixes instead of overwriting existing files. Explicit clipboard/terminal actions do not create converted files.
 - PNG/TIFF support alpha. JPG/BMP place transparency on white. Metadata is not copied; archival color/high-bit-depth fidelity is not promised. Multi-frame image routes reject animation or multiple pages rather than discarding frames; use a media route for animated GIFs.
-- PDF → DOCX reconstructs text paragraphs, not the original layout. PDF → PPTX produces image slides. PDF → XLSX extracts detected tables, not arbitrary page layout. Scans need OCR, which is not installed in this build.
+- PDF → Word reconstructs editable text with font/size/style, paragraph spacing, tables, images and page sections using pdf2docx. This is a layout reconstruction: complex PDFs, unavailable fonts and different Word renderers can change appearance or pagination. Scan-only image pages are rejected with an OCR message instead of silently disappearing; OCR is not installed. PDF → PPTX produces image slides. PDF → XLSX extracts detected tables, not arbitrary page layout.
 - Routes labelled **PDF text** and text/ebook conversions flatten structure and styling. Use the LibreOffice PDF route for Office layout rendering. Fonts and pagination can still differ from Microsoft Office.
 - CSV/TSV export uses one worksheet and loses formatting. The simple XLSX adapter reads cached formula values; LibreOffice routes can recalculate.
 - PDF compression may not shrink every file. Multi-page exports produce a new folder.
@@ -78,7 +78,7 @@ Source modules are under src/; engine code and pinned requirements under engines
 
 ## Windows installer
 
-The local candidate is `artifacts/setup/Citrus-Setup-0.3.0-x64.exe`. Exit older development copies before installing. Keep sign-in startup selected to launch Citrus into the tray automatically. Settings and converted user files survive uninstall. Windows controls whether the icon appears beside the clock or in the overflow menu.
+The local candidate is `artifacts/setup/Citrus-Setup-0.3.1-x64.exe`. Exit older development copies before installing. Keep sign-in startup selected to launch Citrus into the tray automatically. Settings and converted user files survive uninstall. Windows controls whether the icon appears beside the clock or in the overflow menu.
 
 The setup targets Windows 10 build 19041+ and Windows 11 x64 and bundles Python, conversion libraries, FFmpeg and LibreOffice. Its Microsoft VC++ prerequisite requests elevation if a compatible runtime is missing; Citrus itself runs without elevation. ARM64 is untested.
 

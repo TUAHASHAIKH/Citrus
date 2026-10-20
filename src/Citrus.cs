@@ -37,7 +37,11 @@ namespace Citrus
             // Keep the single-instance guard and activation signal local to this desktop.
             string desktop = Native.DesktopName();
             ShowEventName = "Local.Citrus.ShowWindow." + desktop;
-            string shutdownEvent = "Local.Citrus.Shutdown." + desktop;
+            string shutdownEvent;
+            using (var hash = System.Security.Cryptography.SHA256.Create()) {
+                string installation = Path.GetFullPath(AppDomain.CurrentDomain.BaseDirectory).TrimEnd(Path.DirectorySeparatorChar).ToUpperInvariant();
+                shutdownEvent = "Local.Citrus.Shutdown." + desktop + "." + BitConverter.ToString(hash.ComputeHash(Encoding.UTF8.GetBytes(installation))).Replace("-", "");
+            }
             string mutexName = "Local.Citrus.JpegPrototype." + desktop;
             if (Array.IndexOf(args, "--shutdown") >= 0) {
                 try {

@@ -102,8 +102,8 @@ def capabilities():
         for ext in ["png", "jpg", "txt", "md", "epub"]:
             add("pdf." + ext, ext.upper() + (" pages" if ext in ["png", "jpg"] else ""), "." + ext, [".pdf"],
                 "All pages exported into a new folder at 300 DPI." if ext in ["png", "jpg"] else "Text-layer extraction only; scanned PDFs need OCR.")
-        if available("docx"):
-            add("pdf.docx", "DOCX text", ".docx", [".pdf"], "Reconstructs paragraphs only, not the original PDF layout; scanned pages need OCR.")
+        if available("docx") and available("pdf2docx"):
+            add("pdf.docx", "Word (layout)", ".docx", [".pdf"], "Reconstructs editable text, tables, images and page layout. Complex layouts and unavailable fonts can differ; scanned pages need OCR.")
         if available("pptx"):
             add("pdf.pptx", "PPTX slides", ".pptx", [".pdf"], "One rendered page per slide. Text is not editable.")
         if available("openpyxl"):
@@ -337,6 +337,33 @@ def pdf_convert(source, target, output):
                 if page.rect.width * page.rect.height * (300 / 72) ** 2 > 80_000_000: raise ValueError("PDF page too large.")
                 page.get_pixmap(dpi=300, alpha=False).save(output / ("page-" + str(index + 1).zfill(4) + "." + target))
             return output
+        elif target == "docx":
+            # Do not silently discard scan-only pages or publish a partially parsed document.
+            for index, page in enumerate(doc):
+                if not page.get_text().strip() and page.get_images():
+                    raise ValueError("Page " + str(index + 1) + " has no PDF text layer. OCR is required for scanned pages before editable Word conversion.")
+            from pdf2docx import Converter as LayoutConverter
+            from docx import Document
+            converter = LayoutConverter(str(source))
+            try:
+                settings = converter.default_settings
+                settings.update(ignore_page_error=False, raw_exceptions=True)
+                converter.parse(**settings)
+                converted = Document()
+                for page in converter.pages:
+                    if not page.finalized:
+                        raise ValueError("Word layout parsing did not complete for page " + str(page.id + 1) + ".")
+                    page.make_docx(converted)
+                    # pdf2docx decides whether to start a page by checking body
+                    # paragraphs. An empty/table-only first page needs an anchor.
+                    if not converted.paragraphs:
+                        converted.add_paragraph()
+                converted.save(output)
+            finally:
+                converter.close()
+            converted = Document(output)
+            if len(doc) and not converted.sections:
+                raise ValueError("Word conversion produced no document sections.")
         elif target == "xlsx":
             import openpyxl
             book = openpyxl.Workbook()

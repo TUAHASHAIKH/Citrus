@@ -16,7 +16,8 @@ Try Sample.jpg → PNG, WebP, AVIF, HEIC, PDF, resize or compress.
 Select several images for Combine PDF, or several PDFs for Merge PDFs.
 Try audio/video, documents, slides, spreadsheets, subtitles and archives.
 For every file/folder: Copy path, Copy files, Show folder and Terminal.
-Scanned PDF text needs OCR; PDF-to-Word is text-only reconstruction.
+PDF-to-Word uses editable layout reconstruction, including tables and styles.
+Complex layouts/unavailable fonts may differ; scanned PDF pages need OCR.
 
 Closing with X keeps Citrus running in the tray.
 Right-click the orange-and-leaf icon for Settings, Engine status,

@@ -81,7 +81,11 @@ namespace Citrus
     static class EngineBridge
     {
         public static T Read<T>(string path) {
-            using (var stream = File.OpenRead(path)) return (T)new DataContractJsonSerializer(typeof(T)).ReadObject(stream);
+            // Windows PowerShell writes UTF-8 JSON with a BOM. Strip it before
+            // handing bytes to the .NET Framework JSON reader.
+            using (var reader = new StreamReader(path, Encoding.UTF8, true))
+            using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(reader.ReadToEnd())))
+                return (T)new DataContractJsonSerializer(typeof(T)).ReadObject(stream);
         }
         public static void Write<T>(string path, T value) {
             using (var stream = File.Create(path)) new DataContractJsonSerializer(typeof(T)).WriteObject(stream, value);

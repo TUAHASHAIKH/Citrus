@@ -22,7 +22,7 @@ def digest(path):
     with path.open("rb") as stream:
         return hashlib.file_digest(stream, "sha256").hexdigest()
 report = {
-    "citrus_version": "0.3.0", "runtime": runtime,
+    "citrus_version": "0.3.1", "runtime": runtime,
     "python_version": subprocess.check_output([str(payload / "engine" / runtime["Python"]), "--version"], text=True).strip(),
     "packages": sorted(packages, key=lambda item: item["name"].lower()),
     "ffmpeg_build": subprocess.check_output([str(ffmpeg), "-version"], text=True, errors="replace"),

@@ -4,6 +4,10 @@ Research date: 20 October 2026. The original proposal follows the implementation
 
 ## Current implementation checkpoint
 
+### PDF-to-Word layout correction (0.3.1)
+
+The Word route now uses pinned pdf2docx 0.5.13 to reconstruct editable text styles, paragraph spacing, tables, images and page geometry instead of writing extracted text into default paragraphs. Explicit page anchors preserve leading/blank/table-only page boundaries; parsing errors fail the conversion rather than silently skipping pages. Scan-only image pages return an OCR requirement. Regression fixtures inspect DOCX structure and render it back through LibreOffice to verify page count, blank pages and orientation. Exact visual equivalence is not promised for arbitrary PDFs or missing fonts.
+
 ### Installer release candidate
 
 `tools/Build-Setup.ps1` prepares a self-contained x64 Python runtime and all Python engines, FFmpeg and LibreOffice, then produces an Inno Setup installer. Installed configuration uses relative paths and explicit bundled FFmpeg/Office executables. Setup installs per user, offers sign-in startup, launches into the tray, and includes a Microsoft-signed VC++ prerequisite for machines lacking a compatible runtime. The installed app exposes a graceful shutdown signal for upgrades/uninstall, including cancellation of queued/active work. Uninstall preserves user settings and converted files and removes only its own startup registration.
