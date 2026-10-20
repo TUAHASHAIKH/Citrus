@@ -4,9 +4,9 @@ An offline Windows converter with a glass-style interface and a format wheel bes
 
 <img src="assets/citrus.png" alt="Citrus logo" width="96">
 
-**Open-source development preview.** Source is available here; the full installer has not been published. Local checks have passed, but clean-Windows acceptance and third-party source review remain open. See [release status](docs/RELEASE_STATUS.md) and [testing guide](docs/WINDOWS_ACCEPTANCE.md).
+**Open-source development preview.** Source is available here; the full installer has not been published. Local checks have passed, but clean-Windows acceptance and third-party source review remain open.
 
-Licensed under **AGPL-3.0**; see [LICENSE](LICENSE). For the downloadable Windows setup workflow, bundled engines, build/test commands and remaining public-release gates, see [RELEASE.md](RELEASE.md). The installer is currently a local unsigned release candidate.
+Licensed under **AGPL-3.0**; see [LICENSE](LICENSE) and [third-party notices](THIRD_PARTY_NOTICES.md).
 
 ## Use it
 
@@ -75,3 +75,22 @@ The build writes engine/worker.py and a machine-local engine/runtime.json next t
 Builds and fixtures go to temporary directories, keeping Try Citrus clean. Checks cover original image behavior, glass/layout controls, catalog intersection, six-wedge geometry, settings, source preservation, collision handling, Unicode/space-containing paths, worker errors/cleanup, process-tree cancellation, queued background jobs, and real output from every advertised worker profile. Each profile is exercised with a generated representative input, not every possible source/target pair or real-world layout.
 
 Source modules are under src/; engine code and pinned requirements under engines/. Progress and remaining work are recorded in WINDOWS_IMPLEMENTATION_ROADMAP.md.
+
+## Windows installer
+
+The local candidate is `artifacts/setup/Citrus-Setup-0.3.0-x64.exe`. Exit older development copies before installing. Keep sign-in startup selected to launch Citrus into the tray automatically. Settings and converted user files survive uninstall. Windows controls whether the icon appears beside the clock or in the overflow menu.
+
+The setup targets Windows 10 build 19041+ and Windows 11 x64 and bundles Python, conversion libraries, FFmpeg and LibreOffice. Its Microsoft VC++ prerequisite requests elevation if a compatible runtime is missing; Citrus itself runs without elevation. ARM64 is untested.
+
+```powershell
+# Build machine: Python 3.13 x64, LibreOffice and Inno Setup 6 required.
+.\tools\Build-Setup.ps1
+.\tools\Test-Setup.ps1
+.\tools\Test-TrayLifecycle.ps1
+```
+
+The setup checks cover isolated installation on the developer machine, installed-app regressions, reinstall/uninstall and real tray startup/single-instance/shutdown behavior. Generated output and packaging caches can be rebuilt. `.engines/python` is required by the current manual app; do not remove it without provisioning a replacement runtime.
+
+Before public installer distribution, finish matching third-party source/build materials and clean Windows testing. `tools/Collect-Release-Sources.py` can regenerate source archives and notices for review; collection alone is not compliance clearance. In particular, verify the exact Gyan FFmpeg build and native dependencies of PyMuPDF/MuPDF, HEIF wheels, Pillow/lxml and LibreOffice. Signing is not configured, so Windows may warn about the unsigned installer.
+
+Fresh-machine acceptance remains untested: install without developer tools or preinstalled engines, verify prerequisite acceptance/decline, sign-in startup, Explorer/Desktop Shift-drag at different DPI settings, offline conversions, cancellation, upgrade/uninstall while converting and preservation of originals. Do not label unobserved cases as passed. No account, payments, hosted conversion or automatic updater is implemented.

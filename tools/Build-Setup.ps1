@@ -85,6 +85,6 @@ $setup = Join-Path $output 'Citrus-Setup-0.3.0-x64.exe'
 Get-FileHash -LiteralPath $setup -Algorithm SHA256 | Format-List
 $hash = (Get-FileHash -LiteralPath $setup -Algorithm SHA256).Hash.ToLowerInvariant()
 "$hash  $([IO.Path]::GetFileName($setup))" | Set-Content -LiteralPath (Join-Path $output 'SHA256SUMS.txt') -Encoding Ascii
-Copy-Item -LiteralPath (Join-Path $project 'RELEASE.md') -Destination $output -Force
+Copy-Item -LiteralPath (Join-Path $project 'README.md') -Destination $output -Force
 Write-Host "Release candidate: $setup"
-Write-Host 'Public distribution still requires the source/license bundle and signing checklist in RELEASE.md.'
+Write-Host 'Public distribution still requires the source/license materials and clean Windows testing described in README.md.'
