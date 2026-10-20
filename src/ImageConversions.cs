@@ -62,7 +62,7 @@ namespace Citrus
             return Convert(source, ImageTarget.Png, 90, token);
         }
 
-        public static string Convert(string source, ImageTarget target, int jpegQuality, CancellationToken token)
+        public static string Convert(string source, ImageTarget target, int jpegQuality, CancellationToken token, string outputDirectory = null)
         {
             source = Path.GetFullPath(source);
             ImageTarget sourceFormat;
@@ -71,7 +71,7 @@ namespace Citrus
             if (sourceFormat == target) throw new InvalidDataException("Choose a different output format.");
             if (jpegQuality < 1 || jpegQuality > 100) throw new ArgumentOutOfRangeException("jpegQuality");
             var targetFormat = ImageRoutes.Format(target);
-            string directory = Path.GetDirectoryName(source);
+            string directory = outputDirectory ?? Path.GetDirectoryName(source);
             string staging = Path.Combine(directory, ".citrus-" + Guid.NewGuid().ToString("N") + ".tmp");
             int width = 0, height = 0;
             try {

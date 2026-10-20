@@ -15,4 +15,9 @@ finally { if (Test-Path -LiteralPath $iconGenerator) { Remove-Item -LiteralPath 
 $sources = @(Get-ChildItem -LiteralPath (Join-Path $root 'src') -Filter '*.cs' | ForEach-Object { $_.FullName })
 & $compiler /nologo /target:winexe /optimize+ /platform:anycpu /reference:System.Drawing.dll /reference:System.Windows.Forms.dll /reference:System.Runtime.Serialization.dll "/win32icon:$root\assets\citrus.ico" "/resource:$root\assets\citrus.ico,Citrus.Icon" "/out:$out\Citrus.exe" $sources
 if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
+$engineDirectory = Join-Path $out 'engine'
+New-Item -ItemType Directory -Force -Path $engineDirectory | Out-Null
+Copy-Item -LiteralPath (Join-Path $root 'engines\worker.py') -Destination (Join-Path $engineDirectory 'worker.py') -Force
+$pythonCommand = Get-Command python.exe -ErrorAction SilentlyContinue
+@{ Python = $(if ($pythonCommand) { $pythonCommand.Source } else { '' }); Libraries = (Join-Path $root '.engines\python') } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $engineDirectory 'runtime.json') -Encoding UTF8
 Write-Host "Built $out\Citrus.exe"

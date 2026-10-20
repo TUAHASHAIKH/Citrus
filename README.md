@@ -1,74 +1,71 @@
-# Citrus — offline image converter
+# Citrus
 
-Citrus runs in the Windows tray. Drag an image, tap Shift, and drop onto a format in the wheel beside your cursor. Originals stay untouched; outputs are saved next to them without overwriting existing files.
+An offline Windows converter with a glass-style interface and a format wheel beside your cursor.
 
-## Try it
+## Use it
 
-Use the **Try Citrus** folder. It contains the app, Sample.jpg, your previous conversion results, and START HERE.txt.
+Citrus is running in the background. Drag a file, tap **Shift**, release Shift while keeping the mouse held, then drop onto a named wedge. The hovered choice turns orange. Hold over **More →** for about 0.65 seconds to cycle to the next page; move away before using More again. The center and gaps are neutral. Escape cancels.
 
-- Drag a JPG in Explorer or on the Desktop, then tap **Shift**. Holding Shift before dragging also works.
-- Release Shift while keeping the mouse held. The wheel shows **PNG**, **BMP**, and **TIFF** for a JPG.
-- Move onto a named wedge and release the mouse. The hovered wedge turns orange.
-- Drag a PNG to get **JPG**, **BMP**, and **TIFF** choices instead.
-- Escape, the center, and the gaps between wedges are neutral. Releasing the activation key keeps the wheel open.
-- The wheel stays beside the original cursor location while selecting and fits within the current monitor's work area.
+Double-click **Try Citrus/Citrus.exe** for the file picker: **Choose files… → Format / action → Convert**. Closing the window keeps Citrus in the tray. Right-click the orange-and-leaf tray icon for settings, engine status, cancel-all, output-folder access, Windows startup, and Exit.
 
-For the keyboard-accessible picker, double-click Citrus.exe, click **Choose images…**, select files, choose **Output format**, then click **Convert**. Dropping images onto the main window loads them for this workflow.
+## Conversions and tools
 
-## Supported images
-
-| Inputs | Outputs |
+| Family | Supported operations |
 |---|---|
-| JPG / JPEG | PNG, BMP, TIFF |
-| PNG | JPG, BMP, TIFF |
-| BMP | PNG, JPG, TIFF |
-| Single-page TIF / TIFF | PNG, JPG, BMP |
+| Images | JPG, PNG, BMP, single-page TIFF, WebP, AVIF, HEIC/HEIF; PDF export; combine images into a PDF; resize 50%; compress to JPEG |
+| Audio | MP3, M4A, WAV, FLAC, OGG, Opus, AIFF, WMA; normalize to WAV |
+| Video | MP4, MOV, MKV, WebM, AVI, WMV, GIF; M4V input; audio extraction; mute video |
+| PDF | All pages to PNG/JPG at 300 DPI; TXT/Markdown/EPUB text; DOCX paragraphs; PPTX rendered slides; XLSX detected tables; merge, split, compress |
+| Documents | DOC/DOCX/ODT/RTF through LibreOffice; TXT/Markdown/HTML/EPUB text conversions and DOCX/PDF text export |
+| Slides | PPT/PPTX/ODP to PDF, PPTX/ODP, or all pages as PNG/JPG |
+| Spreadsheets | XLS/XLSX/ODS/CSV/TSV to XLSX/ODS/CSV/TSV/PDF where applicable |
+| Subtitles | SRT ↔ VTT; plain transcript TXT |
+| Archives | ZIP/TAR/TAR.GZ/GZIP/TGZ repacking and extraction; arbitrary files/folders into ZIP |
+| File actions | Copy path, copy files, show folder, open Terminal |
 
-Mixed batches offer targets available to every selected image. JPG + PNG can become BMP or TIFF. All four source formats together leave no common different format; split that batch. Same-format re-encoding is not offered.
+The runtime catalog hides profiles whose required local engines/encoders are unavailable. Mixed batches use the intersection of supported routes. Aggregate operations such as PDF merging require multiple files; they save one combined output beside the first selected item. File actions work for folders and unsupported formats too.
 
-PNG/TIFF exports preserve supported alpha transparency. JPG/BMP flatten transparency onto white. JPEG quality is configurable. EXIF orientation is applied; metadata is not copied. This is an 8-bit raster pipeline; archival color-profile fidelity and high-bit-depth preservation are not promised. JPEG's existing compression loss cannot be undone.
+## Fidelity and limits
 
-Multi-page TIFFs are rejected instead of losing pages. Images above 80 megapixels are rejected after decoder initialization. WebP, HEIC, AVIF, GIF, PDF, audio and video are not supported in this build.
+- Originals are preserved. Output names gain numeric suffixes instead of overwriting existing files. Explicit clipboard/terminal actions do not create converted files.
+- PNG/TIFF support alpha. JPG/BMP place transparency on white. Metadata is not copied; archival color/high-bit-depth fidelity is not promised. Multi-frame image routes reject animation or multiple pages rather than discarding frames; use a media route for animated GIFs.
+- PDF → DOCX reconstructs text paragraphs, not the original layout. PDF → PPTX produces image slides. PDF → XLSX extracts detected tables, not arbitrary page layout. Scans need OCR, which is not installed in this build.
+- Routes labelled **PDF text** and text/ebook conversions flatten structure and styling. Use the LibreOffice PDF route for Office layout rendering. Fonts and pagination can still differ from Microsoft Office.
+- CSV/TSV export uses one worksheet and loses formatting. The simple XLSX adapter reads cached formula values; LibreOffice routes can recalculate.
+- PDF compression may not shrink every file. Multi-page exports produce a new folder.
+- RAR, Apple Pages, AirDrop, interactive crop/annotation/redaction, OCR and full Tangerine parity remain unfinished. No universal “every format to every format” claim is made.
 
-## Tray and settings
+## Background operation and jobs
 
-Closing or minimizing keeps Citrus active. Double-click its orange-and-leaf tray icon to reopen it. Right-click for:
+The window and wheel use rounded controls, translucent tints, gradients and fine highlights. Supported Windows 11 systems also request the native transient backdrop and extended glass frame; appearance depends on Windows composition/transparency settings. Older systems and high contrast use a readable fallback.
 
-- **Drag-to-convert enabled** — pause/resume; this preference is saved.
-- **Settings…** — Shift/Alt/Control trigger, Dark/Light/System appearance, JPEG quality and reduced animation.
-- **Start with Windows** — start hidden at sign-in.
-- **Exit Citrus** — stop the app, cancelling an active batch first.
+Settings persist in %LOCALAPPDATA%\Citrus\settings.json: Shift/Alt/Control trigger, pause, JPEG quality, Dark/Light/System appearance, reduced animation. Sign-in startup uses the current user's Windows Run key; keep the project and app folders in place.
 
-Settings are saved atomically in %LOCALAPPDATA%\Citrus\settings.json. Corrupt settings are preserved with a .corrupt-… suffix and defaults are restored in memory. Startup uses the current user's Windows Run key. Keep the executable at its registered location.
+Conversions run in isolated worker processes. Windows Job Objects terminate their children on cancellation or app exit. The queue holds up to 20 waiting batches, with one active batch and per-file progress. Cancel clears pending work and stops the current worker. Worker staging is beside the destination for non-overwriting atomic publication. The queue is in memory: crash/reboot recovery, detailed history/retry and duration-based media progress remain future work.
 
-Successful background conversions show a tray notification. Errors open details. Windows notification preferences may suppress balloons. Batches run sequentially on a background thread; another drag is rejected while a batch is active. Cancellation is checked between decode/encode/publication steps; Windows codecs cannot be interrupted midway through an operation.
+Processing uses local engines and does not intentionally upload files. Cloud placeholders or UNC files may require their storage provider/network. Initial engine installation downloads software; conversions do not require that download step again.
 
-## Build and developer checks
+## Build and engine setup
 
-No SDK, NuGet package, external converter, or network connection is required. The prototype uses C#, Windows Forms, and Windows' .NET Framework compiler/codecs.
+The C# shell uses Windows Forms and Windows' .NET Framework compiler. Native image workers work without Python. The expanded catalog uses Python 3.13, local packages, FFmpeg, and optional LibreOffice. This machine has these engines installed.
 
 ~~~powershell
+# On another machine, install Python, then provision local dependencies:
+.\tools\Install-Engines.ps1 -WithOffice
+
+# Exit Citrus via the tray before overwriting its executable:
 .\build.ps1
 & '.\Try Citrus\Citrus.exe'
 ~~~
 
-Exit from the tray before rebuilding into the same folder. To build and test in a temporary directory:
+The build writes engine/worker.py and a machine-local engine/runtime.json next to the executable. Third-party packages remain in the ignored .engines directory or the installed Python environment; this is a development installation, not a standalone redistributable installer. See THIRD_PARTY_NOTICES.md.
+
+## Checks
 
 ~~~powershell
-.\tools\Test.ps1
+.\tools\Test.ps1 -AllEngines
 ~~~
 
-This keeps manual-testing folders clean. Checks cover all 12 routes, transparency, JPEG quality, white backgrounds, multi-page rejection, originals, collisions, corruption, cancellation, route intersection, wedge geometry, settings recovery, layout and background lifecycle. Reports and UI previews stay in the printed temporary directory.
+Builds and fixtures go to temporary directories, keeping Try Citrus clean. Checks cover original image behavior, glass/layout controls, catalog intersection, six-wedge geometry, settings, source preservation, collision handling, Unicode/space-containing paths, worker errors/cleanup, process-tree cancellation, queued background jobs, and real output from every advertised worker profile. Each profile is exercised with a generated representative input, not every possible source/target pair or real-world layout.
 
-## Source and next work
-
-- src/Citrus.cs: app lifetime, tray, window, input observer, overlay and original regression checks.
-- src/ImageConversions.cs: supported routes, conversion and output validation.
-- src/RingGeometry.cs: shared wedge drawing and hit testing.
-- src/AppSettings.cs: preferences, atomic persistence, palette and settings dialog.
-- src/Brand.cs, assets/, tools/GenerateIcon.cs: original vector branding and embedded icon.
-- src/PhaseTwoTests.cs: expanded image/settings/interaction checks.
-
-The input observer samples every 25 ms and runs while the UI is hidden. Very fast taps, elevated/non-OLE sources, virtual attachments and some applications can behave differently. Automated tests do not replace manual Explorer, high-contrast and mixed-DPI checks.
-
-The decoder still runs in the app process. Isolated workers, a persistent queue, media engines, installation/signing and editing belong to subsequent milestones. See WINDOWS_IMPLEMENTATION_ROADMAP.md for implementation status.
+Source modules are under src/; engine code and pinned requirements under engines/. Progress and remaining work are recorded in WINDOWS_IMPLEMENTATION_ROADMAP.md.

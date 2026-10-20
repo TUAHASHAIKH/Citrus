@@ -4,6 +4,22 @@ Research date: 20 October 2026. The original proposal follows the implementation
 
 ## Current implementation checkpoint
 
+### Expanded converter iteration
+
+The current iteration adds a glass-style shell and ring with rounded controls, highlights, tinted surfaces and Windows native backdrop/frame requests with fallback. A shared runtime catalog now connects built-in image codecs, Pillow/HEIF/AVIF, FFmpeg, PyMuPDF, python-docx/python-pptx, openpyxl, standard-library archives/subtitles and installed LibreOffice.
+
+The catalog covers images, audio/video and audio extraction, PDF page/text/table exports, documents, slides, spreadsheets, ebooks, subtitles and archives. It includes image resize/compress, PDF combine/merge/split/compress, video muting, audio normalization, ZIP creation/extraction and four clipboard/folder/terminal actions. Read README.md for the actual support matrix and fidelity limits; unavailable engines/encoders do not generate active conversion profiles.
+
+All conversions now execute in child workers, including the original native image routes. A bounded in-memory queue accepts up to 20 waiting batches. Job Objects supervise worker descendants and enforce memory limits; cancellation clears queued work and terminates the active process tree. Outputs stage beside the destination and publish without overwriting originals. Multiple-page outputs publish as folders. Aggregate operations save beside the first selected source. Progress is currently per-file, not media-duration based.
+
+The wheel uses six stable slots, with a dwell-operated More wedge for larger catalogs. File metadata/target classification is cached during drag-over. Native background/startup behavior is retained. Engine setup is reproducible through engines/requirements.txt and tools/Install-Engines.ps1; downloaded binaries stay out of Git.
+
+Validation includes generated representative input for every advertised Python worker profile, plus the original image suite, glass/layout checks, Unicode paths, source preservation, PDF page/table semantics, subtitle timing, archive traversal rejection, safe spreadsheet cell imports, pure JSON worker responses, failure cleanup, process-tree termination and queue lifecycle checks. This is not exhaustive validation of every source/target edge, layout, codec variant or Windows drag source.
+
+Remaining: persistent job journal/recovery/history/retry; richer streaming progress; OCR; RAR; native Pages/AirDrop equivalents; interactive crop/annotation/redaction/trim editors; broad manual mixed-DPI/high-contrast/application compatibility; a signed, self-contained installer and engine-distribution compliance work. Python runtime/configuration is machine-local in this development build. Full Tangerine parity is not declared complete.
+
+### Earlier image-shell checkpoint
+
 The user confirmed the original JPG-to-PNG prototype and drag gesture work on this Windows machine. The next iteration implements the Phase 2 interaction shell and the first image portion of Phase 3:
 
 - Contextual wedges with shared drawing/hit-test geometry; output choices exclude source formats and intersect across mixed batches.

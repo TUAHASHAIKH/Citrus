@@ -21,6 +21,7 @@ namespace Citrus
         [STAThread]
         static void Main(string[] args)
         {
+            if (args.Length == 2 && args[0] == "--native-worker") { Environment.Exit(EngineBridge.RunNative(args[1])); return; }
             if (args.Length > 0 && args[0] == "--self-test")
             {
                 Environment.Exit(SelfTest.Run(args.Length > 1 ? args[1] : "."));
@@ -46,6 +47,7 @@ namespace Citrus
                 ShowRequested = new EventWaitHandle(false, EventResetMode.AutoReset, ShowEventName);
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
+                int availableProfiles = FormatCatalog.All.Count;
                 Application.Run(new MainWindow(background));
                 ShowRequested.Dispose();
             }
@@ -76,7 +78,13 @@ namespace Citrus
         readonly Button choose = new GlassButton();
         readonly Button cancel = new GlassButton();
         readonly Button convert = new GlassButton();
-        readonly ComboBox output = new ComboBox();
+        readonly ComboBox output = new GlassComboBox { Width = 200 };
+        readonly ProgressBar progress = new ProgressBar { Dock = DockStyle.Fill, Height = 6, Margin = new Padding(0, 18, 0, 0) };
+        readonly Queue<PendingBatch> pending = new Queue<PendingBatch>();
+        bool startingNext;
+        int queueEpoch;
+        class PendingBatch { public string[] Files; public FormatRoute Target; }
+        string lastOutput;
         readonly Label hint;
         readonly ToolStripMenuItem gestureMenu;
         readonly NotifyIcon tray;
@@ -91,7 +99,7 @@ namespace Citrus
         AppSettings settings;
         bool updatingMenu;
         string[] selectedFiles = new string[0];
-        public bool IsConverting { get { return busy; } }
+        public bool IsConverting { get { return busy || startingNext; } }
         public AppSettings Preferences { get { return settings; } }
         public Palette Colors { get; private set; }
 
@@ -105,7 +113,7 @@ namespace Citrus
             hideAtStartup = background;
             brandIcon = Brand.LoadIcon();
             Icon = brandIcon;
-            Text = "Citrus · Image converter";
+            Text = "Citrus · Offline converter";
             AutoScaleDimensions = new SizeF(96, 96);
             AutoScaleMode = AutoScaleMode.Dpi;
             BackColor = Color.FromArgb(23, 25, 30);
@@ -117,12 +125,12 @@ namespace Citrus
             MaximizeBox = false;
             StartPosition = FormStartPosition.CenterScreen;
             var layout = new TableLayoutPanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
-                ColumnCount = 1, RowCount = 5, Padding = new Padding(28), Dock = DockStyle.Fill };
-            var title = new Label { Text = "A fresh format.\nSame photo.", Font = new Font("Segoe UI", 26, FontStyle.Bold),
+                ColumnCount = 1, RowCount = 6, Padding = new Padding(28), Dock = DockStyle.Fill };
+            var title = new Label { Text = "A fresh format.\nNo extra steps.", Font = new Font("Segoe UI", 26, FontStyle.Bold),
                 AutoSize = true, Margin = new Padding(0, 0, 0, 18) };
             hint = new Label {
                 AutoSize = true, Margin = new Padding(0, 0, 0, 22), ForeColor = Color.Silver };
-            choose.Text = "Choose images…";
+            choose.Text = "Choose files…";
             choose.AutoSize = true;
             choose.Padding = new Padding(12, 9, 12, 9);
             choose.Margin = new Padding(0, 0, 12, 0);
@@ -130,25 +138,36 @@ namespace Citrus
             choose.ForeColor = Color.FromArgb(30, 25, 20);
             choose.FlatStyle = FlatStyle.Flat;
             choose.Click += delegate {
-                using (var picker = new OpenFileDialog { Filter = "Supported images|*.jpg;*.jpeg;*.png;*.bmp;*.tif;*.tiff", Multiselect = true })
+                using (var picker = new OpenFileDialog { Filter = "Files to convert|*.*", Multiselect = true })
                     if (picker.ShowDialog(this) == DialogResult.OK) SetSelection(picker.FileNames);
             };
             convert.Text = "Convert"; convert.AutoSize = true; convert.Padding = new Padding(12, 9, 12, 9);
             convert.Name = "ConvertImages"; convert.AccessibleName = "Convert selected images";
             convert.Enabled = false;
-            convert.Click += delegate { if (output.SelectedItem != null) StartConversion(selectedFiles, (ImageTarget)output.SelectedItem); };
+            convert.Click += delegate { if (output.SelectedItem != null) StartConversion(selectedFiles, (FormatRoute)output.SelectedItem); };
             output.DropDownStyle = ComboBoxStyle.DropDownList; output.FormattingEnabled = true;
-            output.Format += delegate(object sender, ListControlConvertEventArgs e) {
-                if (e.ListItem is ImageTarget) e.Value = ImageRoutes.Label((ImageTarget)e.ListItem);
+            output.DrawMode = DrawMode.OwnerDrawFixed; output.ItemHeight = Font.Height + 8; output.FlatStyle = FlatStyle.Flat;
+            output.DrawItem += delegate(object sender, DrawItemEventArgs e) {
+                var palette = Colors ?? Palette.For(settings);
+                bool selected = (e.State & DrawItemState.Selected) != 0;
+                using (var brush = new SolidBrush(selected ? palette.Accent : palette.Segment)) e.Graphics.FillRectangle(brush, e.Bounds);
+                string label = e.Index >= 0 ? output.Items[e.Index].ToString() : output.SelectedItem == null ? "Choose files first" : output.SelectedItem.ToString();
+                TextRenderer.DrawText(e.Graphics, label, output.Font, Rectangle.Inflate(e.Bounds, -5, 0), selected ? palette.AccentText : palette.Text,
+                    TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+                e.DrawFocusRectangle();
             };
             output.Enabled = false; output.Name = "OutputFormat"; output.AccessibleName = "Output image format";
+            output.SelectedIndexChanged += delegate {
+                var route = output.SelectedItem as FormatRoute;
+                if (route != null) status.Text = selectedFiles.Length + " file(s) selected.\n" + route.Warning;
+            };
             cancel.Text = "Cancel";
             cancel.AutoSize = true;
             cancel.Padding = new Padding(12, 9, 12, 9);
             cancel.FlatStyle = FlatStyle.Standard;
             cancel.UseVisualStyleBackColor = true;
             cancel.Enabled = false;
-            cancel.Click += delegate { if (cancellation != null) cancellation.Cancel(); };
+            cancel.Click += delegate { CancelAll(); };
             status.AutoSize = true;
             status.MaximumSize = new Size(460, 0);
             status.Margin = new Padding(0, 22, 0, 0);
@@ -160,14 +179,15 @@ namespace Citrus
             settingsButton.Click += delegate { ShowSettings(); };
             buttons.Controls.AddRange(new Control[] { choose, convert, cancel, settingsButton });
             var outputRow = new FlowLayoutPanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
-                MinimumSize = new Size(0, 36), Margin = new Padding(0, 0, 0, 16), WrapContents = false };
-            outputRow.Controls.Add(new Label { Text = "Output format", AutoSize = true, Margin = new Padding(0, 5, 12, 0) });
+                MinimumSize = new Size(0, 44), Margin = new Padding(0, 0, 0, 16), WrapContents = false };
+            outputRow.Controls.Add(new Label { Text = "Format / action", AutoSize = true, Margin = new Padding(0, 5, 12, 0) });
             outputRow.Controls.Add(output);
             layout.Controls.Add(title, 0, 0);
             layout.Controls.Add(hint, 0, 1);
             layout.Controls.Add(outputRow, 0, 2);
             layout.Controls.Add(buttons, 0, 3);
-            layout.Controls.Add(status, 0, 4);
+            layout.Controls.Add(progress, 0, 4);
+            layout.Controls.Add(status, 0, 5);
             Controls.Add(layout);
             AllowDrop = true;
             DragEnter += delegate(object sender, DragEventArgs e) { e.Effect = Accept(e); };
@@ -191,6 +211,13 @@ namespace Citrus
             };
             menu.Items.Add(gestureMenu);
             menu.Items.Add("Settings…", null, delegate { ShowSettings(); });
+            menu.Items.Add("Cancel all conversions", null, delegate { CancelAll(); });
+            menu.Items.Add("Open output folder", null, delegate {
+                if (lastOutput != null) FileActions.Execute(new string[] { lastOutput }, new FormatRoute { Id = "action.2" });
+            });
+            menu.Items.Add("Engine status", null, delegate {
+                MessageBox.Show(FormatCatalog.EngineStatus + "\n\n" + string.Join("\n", FormatCatalog.All.GroupBy(route => route.Id.Split('.')[0]).Select(group => group.Key + ": " + group.Count() + " profiles")), "Citrus engines");
+            });
             var startup = new ToolStripMenuItem("Start with Windows") { Checked = Startup.Enabled, CheckOnClick = true };
             startup.CheckedChanged += delegate {
                 try { Startup.SetEnabled(startup.Checked); }
@@ -217,6 +244,7 @@ namespace Citrus
                 if (busy && e.CloseReason == CloseReason.UserClosing) {
                     e.Cancel = true;
                     closeAfterCancellation = true;
+                    pending.Clear();
                     cancellation.Cancel();
                     status.Text = "Finishing cancellation before closing…";
                 }
@@ -242,10 +270,10 @@ namespace Citrus
 
         internal void SetSelection(string[] files)
         {
-            var targets = ImageRoutes.Targets(files);
-            if (targets.Length == 0) {
+            var targets = FormatCatalog.Targets(files);
+            if (targets.Length == 0 || files.Any(file => !File.Exists(file) && !Directory.Exists(file))) {
                 selectedFiles = new string[0]; output.Items.Clear(); output.Enabled = convert.Enabled = false;
-                status.Text = "No common output format. Select JPG, PNG, BMP, or single-page TIFF images.";
+                status.Text = "No common conversion is available for these files with the installed engines.";
                 return;
             }
             selectedFiles = (string[])files.Clone();
@@ -255,7 +283,7 @@ namespace Citrus
             output.Enabled = true; convert.Enabled = true;
             output.Parent.PerformLayout();
             PerformLayout();
-            status.Text = files.Length + " image(s) selected. Choose an output format, then Convert.";
+            status.Text = files.Length + " file(s) selected. Choose an output format, then Convert.\n" + targets[0].Warning;
         }
 
         void ShowSettings()
@@ -271,8 +299,9 @@ namespace Citrus
         {
             Colors = Palette.For(settings);
             GlassPalette = Colors;
+            RefreshGlass();
             ApplyColors(this);
-            hint.Text = "Drag an image and tap " + settings.Trigger + " to choose a format.\nJPG · PNG · BMP · TIFF — always offline.";
+            hint.Text = "Drag a file and tap " + settings.Trigger + " to choose a format.\nImages · Media · Documents · Archives — offline.";
             hint.ForeColor = Colors.Muted; status.ForeColor = Colors.Muted;
             choose.BackColor = convert.BackColor = Colors.Accent;
             choose.ForeColor = convert.ForeColor = Colors.AccentText;
@@ -296,6 +325,8 @@ namespace Citrus
             foreach (Control child in parent.Controls) ApplyColors(child);
         }
 
+        internal void CancelAll() { queueEpoch++; pending.Clear(); if (cancellation != null) cancellation.Cancel(); }
+
         protected override void SetVisibleCore(bool value)
         {
             base.SetVisibleCore(value && !hideAtStartup);
@@ -305,12 +336,12 @@ namespace Citrus
 
         public DragDropEffects Accept(DragEventArgs e)
         {
-            if (busy || (e.AllowedEffect & DragDropEffects.Copy) == 0 || !e.Data.GetDataPresent(DataFormats.FileDrop))
+            if (pending.Count >= 20 || (e.AllowedEffect & DragDropEffects.Copy) == 0 || !e.Data.GetDataPresent(DataFormats.FileDrop))
                 return DragDropEffects.None;
             var files = e.Data.GetData(DataFormats.FileDrop) as string[];
             if (files == null || files.Length == 0) return DragDropEffects.None;
-            if (ImageRoutes.Targets(files).Length == 0) return DragDropEffects.None;
-            foreach (string file in files) if (!File.Exists(file)) return DragDropEffects.None;
+            if (FormatCatalog.Targets(files).Length == 0) return DragDropEffects.None;
+            foreach (string file in files) if (!File.Exists(file) && !Directory.Exists(file)) return DragDropEffects.None;
             return DragDropEffects.Copy;
         }
 
@@ -321,7 +352,7 @@ namespace Citrus
             Point point = Cursor.Position;
             bool escape = Native.Down(0x1B);
             if (escape) wheel.Hide();
-            if (gesture.Update(left, shift, escape, point, SystemInformation.DragSize, settings.Enabled && !busy))
+            if (gesture.Update(left, shift, escape, point, SystemInformation.DragSize, settings.Enabled && pending.Count < 20))
             {
                 candidateSince = DateTime.UtcNow;
                 wheel.OpenAt(point);
@@ -339,38 +370,53 @@ namespace Citrus
 
         public void StartConversion(string[] files) { StartConversion(files, ImageTarget.Png); }
 
-        public async void StartConversion(string[] files, ImageTarget target)
+        public void StartConversion(string[] files, ImageTarget target) { StartConversion(files, FormatCatalog.ForImage(target)); }
+
+        public async void StartConversion(string[] files, FormatRoute target)
         {
-            if (busy) return;
-            if (!ImageRoutes.Targets(files).Contains(target)) {
+            if (target.Id.StartsWith("action.")) {
+                try { status.Text = FileActions.Execute(files, target); if (!Visible) tray.ShowBalloonTip(2000, "Citrus", status.Text, ToolTipIcon.Info); }
+                catch (Exception ex) { status.Text = ex.Message; }
+                wheel.Hide(); return;
+            }
+            if (!FormatCatalog.Targets(files).Any(route => route.Id == target.Id)) {
                 status.Text = "That output format is not available for every selected image.";
                 return;
+            }
+            if (busy || startingNext) {
+                if (pending.Count >= 20) { status.Text = "Queue is full. Wait for a batch to finish."; return; }
+                pending.Enqueue(new PendingBatch { Files = (string[])files.Clone(), Target = target });
+                status.Text = pending.Count + " batch(es) queued.";
+                wheel.Hide(); return;
             }
             files = (string[])files.Clone();
             int quality = settings.JpegQuality;
             wheel.Hide();
             busy = true; choose.Enabled = false; convert.Enabled = false; output.Enabled = false; cancel.Enabled = true;
+            int jobsCount = target.Aggregate ? 1 : files.Length;
+            progress.Maximum = Math.Max(1, jobsCount); progress.Value = 0;
             cancellation = new CancellationTokenSource();
             var token = cancellation.Token;
             int completed = 0;
             var errors = new List<string>();
             try
             {
-                foreach (string file in files)
+                foreach (string file in target.Aggregate ? new string[] { files[0] } : files)
                 {
                     if (token.IsCancellationRequested) break;
-                    status.Text = "Converting " + (completed + errors.Count + 1) + " / " + files.Length + " to " + ImageRoutes.Label(target) + "\n" + Path.GetFileName(file);
-                    tray.Text = "Citrus · " + (completed + errors.Count + 1) + "/" + files.Length + " → " + ImageRoutes.Label(target);
-                    try { await Task.Run(() => Converter.Convert(file, target, quality, token)); completed++; }
+                    status.Text = "Converting " + (completed + errors.Count + 1) + " / " + jobsCount + " to " + target.Label + "\n" + Path.GetFileName(file);
+                    tray.Text = "Citrus · " + (completed + errors.Count + 1) + "/" + jobsCount + " → " + target.Label;
+                    try { lastOutput = await Task.Run(() => target.Aggregate ? EngineBridge.ConvertMany(files, target, quality, token) : EngineBridge.Convert(file, target, quality, token)); completed++; }
                     catch (OperationCanceledException) { break; }
                     catch (Exception ex) { errors.Add(Path.GetFileName(file) + ": " + ex.Message); }
+                    progress.Value = Math.Min(progress.Maximum, completed + errors.Count);
                 }
                 if (IsDisposed) return;
-                status.Text = (token.IsCancellationRequested ? "Cancelled. " : "") + completed + " " + ImageRoutes.Label(target) + " saved beside original."
+                status.Text = (token.IsCancellationRequested ? "Cancelled. " : "") + completed + " " + target.Label + " saved beside original."
                     + (errors.Count > 0 ? "\n" + errors.Count + " failed. See details." : "");
                 if (errors.Count > 0) {
                     OpenWindow();
-                    MessageBox.Show(this, string.Join("\n\n", errors.ToArray()), "Conversion details", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show(this, string.Join("\n\n", errors.Take(10).ToArray()) + (errors.Count > 10 ? "\n\n… and " + (errors.Count - 10) + " more failures." : ""), "Conversion details", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
                 else if (!Visible) {
                     tray.ShowBalloonTip(3500, "Citrus", status.Text, ToolTipIcon.Info);
@@ -382,9 +428,15 @@ namespace Citrus
                     choose.Enabled = true; cancel.Enabled = false; convert.Enabled = output.Enabled = selectedFiles.Length > 0;
                     tray.Text = "Citrus · " + settings.Trigger + "-drag" + (settings.Enabled ? "" : " (paused)");
                 }
+                bool wasCancelled = token.IsCancellationRequested;
                 cancellation.Dispose(); cancellation = null;
                 busy = false;
                 if (closeAfterCancellation && !IsDisposed) Close();
+                else if (!wasCancelled && !IsDisposed && pending.Count > 0) {
+                    var next = pending.Dequeue();
+                    int epoch = queueEpoch; startingNext = true;
+                    BeginInvoke((MethodInvoker)delegate { startingNext = false; if (!IsDisposed && epoch == queueEpoch) StartConversion(next.Files, next.Target); });
+                }
             }
         }
     }
@@ -413,10 +465,21 @@ namespace Citrus
     {
         readonly MainWindow owner;
         readonly System.Windows.Forms.Timer animation;
+        readonly System.Windows.Forms.Timer navigation;
         float reveal;
         float scale = 1;
         int hovering = -1;
-        ImageTarget[] targets = new ImageTarget[0];
+        FormatRoute[] targets = new FormatRoute[0];
+        int page;
+        DateTime navigationSince;
+        bool pageLatched;
+        bool hasDragData;
+        bool Paged { get { return targets.Length > 6; } }
+        int SlotCount { get { return Paged ? 6 : targets.Length; } }
+        FormatRoute RouteAt(int slot) {
+            int index = page * 5 + slot;
+            return slot < 0 || (Paged && slot == 5) || index >= targets.Length ? null : targets[index];
+        }
         public bool HasPayload { get; private set; }
         protected override bool ShowWithoutActivation { get { return true; } }
         protected override CreateParams CreateParams {
@@ -433,21 +496,21 @@ namespace Citrus
             BackColor = Color.FromArgb(28, 30, 35);
             DoubleBuffered = true; AllowDrop = true;
             using (var path = new GraphicsPath()) { path.AddEllipse(0, 0, 240, 240); Region = new Region(path); }
-            DragEnter += OnDrag;
+            DragEnter += delegate(object sender, DragEventArgs e) { hasDragData = false; OnDrag(sender, e); };
             DragOver += OnDrag;
-            DragLeave += delegate { hovering = -1; Invalidate(); };
+            DragLeave += delegate { hovering = -1; pageLatched = false; hasDragData = false; Invalidate(); };
             DragDrop += delegate(object sender, DragEventArgs e) {
                 int index = -1;
                 string[] files = null;
                 if (owner.Accept(e) == DragDropEffects.Copy)
                 {
                     files = (string[])e.Data.GetData(DataFormats.FileDrop);
-                    targets = ImageRoutes.Targets(files);
+                    targets = FormatCatalog.Targets(files);
                     index = HitTest(PointToClient(new Point(e.X, e.Y)));
                 }
-                if (index >= 0)
+                if (index >= 0 && RouteAt(index) != null)
                 {
-                    var target = targets[index];
+                    var target = RouteAt(index);
                     e.Effect = DragDropEffects.Copy; Hide(); owner.StartConversion(files, target);
                 }
                 else { e.Effect = DragDropEffects.None; Hide(); }
@@ -457,10 +520,16 @@ namespace Citrus
                 reveal = Math.Min(1, reveal + .12f); Invalidate();
                 if (reveal >= 1) animation.Stop();
             };
+            navigation = new System.Windows.Forms.Timer { Interval = 50 };
+            navigation.Tick += delegate {
+                if (Visible && Paged && hovering == 5 && !pageLatched && (DateTime.UtcNow - navigationSince).TotalMilliseconds >= 650) {
+                    page = (page + 1) % ((targets.Length + 4) / 5); pageLatched = true; Invalidate();
+                }
+            };
         }
         public void OpenAt(Point point)
         {
-            HasPayload = false; hovering = -1; targets = new ImageTarget[0]; reveal = 0;
+            HasPayload = false; hovering = -1; targets = new FormatRoute[0]; reveal = 0; page = 0; pageLatched = false; hasDragData = false;
             scale = Native.DpiAt(point) / 96f;
             int diameter = (int)Math.Round(240 * scale);
             ClientSize = new Size(diameter, diameter);
@@ -475,7 +544,7 @@ namespace Citrus
             Location = PlaceNearCursor(point, area, diameter);
             BackColor = owner.Colors.Background;
             GlassPalette = owner.Colors;
-            Show();
+            Show(); navigation.Start();
             if (owner.Preferences.ReducedMotion || !SystemInformation.IsMenuAnimationEnabled) { reveal = 1; Invalidate(); }
             else animation.Start();
         }
@@ -492,16 +561,22 @@ namespace Citrus
         }
         int HitTest(Point p)
         {
-            return RingGeometry.HitTest(new PointF(p.X / scale, p.Y / scale), targets.Length);
+            return RingGeometry.HitTest(new PointF(p.X / scale, p.Y / scale), SlotCount);
         }
-        public void SetPreviewTargets(string[] files) { targets = ImageRoutes.Targets(files); HasPayload = targets.Length > 0; Invalidate(); }
+        public void SetPreviewTargets(string[] files) { targets = FormatCatalog.Targets(files); HasPayload = targets.Length > 0; page = 0; Invalidate(); }
         void OnDrag(object sender, DragEventArgs e)
         {
-            bool accepted = owner.Accept(e) == DragDropEffects.Copy;
-            HasPayload = accepted;
-            targets = accepted ? ImageRoutes.Targets((string[])e.Data.GetData(DataFormats.FileDrop)) : new ImageTarget[0];
-            hovering = accepted ? HitTest(PointToClient(new Point(e.X, e.Y))) : -1;
-            e.Effect = hovering >= 0 ? DragDropEffects.Copy : DragDropEffects.None;
+            if (!hasDragData) {
+                HasPayload = owner.Accept(e) == DragDropEffects.Copy;
+                targets = HasPayload ? FormatCatalog.Targets((string[])e.Data.GetData(DataFormats.FileDrop)) : new FormatRoute[0];
+                page = 0; hasDragData = true;
+            }
+            bool accepted = HasPayload && (e.AllowedEffect & DragDropEffects.Copy) != 0;
+            int nextHover = accepted ? HitTest(PointToClient(new Point(e.X, e.Y))) : -1;
+            if (nextHover != hovering) navigationSince = DateTime.UtcNow;
+            hovering = nextHover;
+            if (hovering != 5) pageLatched = false;
+            e.Effect = hovering >= 0 && RouteAt(hovering) != null ? DragDropEffects.Copy : DragDropEffects.None;
             Invalidate();
         }
         protected override void OnPaint(PaintEventArgs e)
@@ -509,8 +584,8 @@ namespace Citrus
             var g = e.Graphics; g.SmoothingMode = SmoothingMode.AntiAlias;
             g.ScaleTransform(scale, scale);
             Palette palette = owner.Colors;
-            int count = targets.Length == 0 ? 3 : targets.Length;
-            using (var font = new Font("Segoe UI", 17, FontStyle.Bold, GraphicsUnit.Pixel))
+            int count = targets.Length == 0 ? 3 : SlotCount;
+            using (var font = new Font("Segoe UI", count > 4 ? 13 : 17, FontStyle.Bold, GraphicsUnit.Pixel))
             using (var format = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
             for (int i = 0; i < count; i++)
             {
@@ -526,17 +601,22 @@ namespace Citrus
                 }
                 PointF label = RingGeometry.LabelPoint(i, count);
                 using (var text = new SolidBrush(selected ? palette.AccentText : palette.Text))
-                    g.DrawString(targets.Length == 0 ? "·" : ImageRoutes.Label(targets[i]), font, text,
+                    g.DrawString(targets.Length == 0 ? "·" : Paged && i == 5 ? "More →" : RouteAt(i) == null ? "—" : RouteAt(i).Label, font, text,
                         new RectangleF(label.X - 33, label.Y - 18, 66, 36), format);
             }
             Brand.Draw(g, new RectangleF(103, 83, 34, 34));
             using (var font = new Font("Segoe UI", 11, FontStyle.Regular, GraphicsUnit.Pixel))
             using (var brush = new SolidBrush(palette.Text))
             using (var format = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
-                g.DrawString(hovering >= 0 ? "Drop for\n" + ImageRoutes.Label(targets[hovering]) : HasPayload ? "Choose\nformat" : "Drag\nimages", font, brush, new RectangleF(83, 121, 74, 32), format);
+                g.DrawString(Paged && hovering == 5 ? "Hold for\nnext page" : hovering >= 0 && RouteAt(hovering) != null ? "Drop for\n" + RouteAt(hovering).Label : HasPayload ? "Choose\nformat" : "Drag\nfiles", font, brush, new RectangleF(83, 121, 74, 32), format);
             base.OnPaint(e);
         }
-        protected override void Dispose(bool disposing) { if (disposing) animation.Dispose(); base.Dispose(disposing); }
+        protected override void OnVisibleChanged(EventArgs e)
+        {
+            base.OnVisibleChanged(e);
+            if (!Visible) { if (animation != null) animation.Stop(); if (navigation != null) navigation.Stop(); }
+        }
+        protected override void Dispose(bool disposing) { if (disposing) { animation.Dispose(); navigation.Dispose(); } base.Dispose(disposing); }
     }
 
     static class Native
@@ -586,6 +666,7 @@ namespace Citrus
                 CheckGestures();
                 CheckPlacement();
                 PhaseTwoTests.Run(root);
+                EngineTests.Run(root);
                 string jpg = Path.Combine(root, "photo.jpg");
                 using (var image = new Bitmap(64, 32)) {
                     using (var g = Graphics.FromImage(image)) g.Clear(Color.Coral);
@@ -681,7 +762,7 @@ namespace Citrus
                     Assert(Directory.GetFiles(root, "photo*.png").Length == before + 1, "background conversion publishes PNG");
                     Assert(!background.Visible, "background conversion does not open converter UI");
                 }
-                File.WriteAllText(report, "PASS: 12 image routes, transparency, white JPEG/BMP background, multi-page TIFF rejection, capability intersection, wedge hit testing, atomic settings, corrupt-settings recovery, logo resource, cursor-relative ring placement, screen-edge clamping, DPI-scaled placement, Shift-before-drag, Shift-during-drag, one activation per drag, Escape, normal dragging, PNG format, dimensions, collisions, source preservation, corrupt input, disguised input, cancellation, cleanup, UI/settings layout, close-to-tray, reopen, hidden startup, background conversion.");
+                File.WriteAllText(report, "PASS: native image routes, transparency, multi-page rejection, catalog intersection, six-wedge geometry, settings recovery, cursor/DPI placement, drag activation/cancellation, original preservation, collision safety, UI/settings layout, close-to-tray, hidden startup, background conversion; optional engine bridge, failure cleanup, job-object process-tree termination and queue checks run when engines are available.");
                 return 0;
             }
             catch (Exception ex) { File.WriteAllText(report, ex.ToString()); return 1; }

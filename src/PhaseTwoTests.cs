@@ -112,7 +112,7 @@ namespace Citrus
         }
         static void CheckWedges()
         {
-            for (int count = 1; count <= 3; count++) {
+            for (int count = 1; count <= 6; count++) {
                 Assert(RingGeometry.HitTest(new PointF(120, 120), count) == -1, "neutral center");
                 Assert(RingGeometry.HitTest(new PointF(0, 0), count) == -1, "outside circle");
                 for (int i = 0; i < count; i++) {
