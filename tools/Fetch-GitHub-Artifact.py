@@ -38,11 +38,14 @@ def main():
                 print("Verified cached source artifact.")
                 return
     environment = dict(os.environ, GIT_TERMINAL_PROMPT="0", GCM_INTERACTIVE="Never")
-    credential = subprocess.run(["git", "credential", "fill"], input="protocol=https\nhost=github.com\n\n",
-                                text=True, capture_output=True, env=environment)
-    fields = dict(line.split("=", 1) for line in credential.stdout.splitlines() if "=" in line)
-    if credential.returncode or not fields.get("password"):
-        raise RuntimeError("GitHub credential helper is not available for the upstream source artifact.")
+    token = os.environ.get("GITHUB_TOKEN")
+    if not token:
+        credential = subprocess.run(["git", "credential", "fill"], input="protocol=https\nhost=github.com\n\n",
+                                    text=True, capture_output=True, env=environment)
+        fields = dict(line.split("=", 1) for line in credential.stdout.splitlines() if "=" in line)
+        token = fields.get("password") if credential.returncode == 0 else None
+    if not token:
+        raise RuntimeError("GitHub authentication is not available for the upstream source artifact.")
     redirect_lock = threading.Lock()
     redirect = {"target": None, "created": 0}
     def storage_target(refresh=False):
@@ -51,7 +54,7 @@ def main():
                 return redirect["target"]
             request = urllib.request.Request(
                 f"https://api.github.com/repos/{args.repository}/actions/artifacts/{args.artifact}/zip?citrus_request={time.time_ns()}",
-                headers={"Authorization": "Bearer " + fields["password"], "User-Agent": "Citrus-source-audit", "Cache-Control": "no-cache"})
+                headers={"Authorization": "Bearer " + token, "User-Agent": "Citrus-source-audit", "Cache-Control": "no-cache"})
             try:
                 urllib.request.build_opener(NoRedirect).open(request, timeout=60)
                 raise RuntimeError("Expected GitHub's artifact storage redirect")

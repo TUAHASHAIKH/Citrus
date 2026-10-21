@@ -1,0 +1,28 @@
+name: Publish verified corresponding sources
+on:
+  workflow_dispatch:
+    inputs:
+      seed_sha256:
+        description: SHA256 of the reviewed source manifest uploaded to the source draft
+        required: true
+        type: string
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: citrus-source-release
+  cancel-in-progress: false
+jobs:
+  sources:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Assemble and publish reviewed source materials
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          CITRUS_SEED_SHA256: ${{ inputs.seed_sha256 }}
+        run: python3 tools/Mirror-Release-Sources.py

@@ -63,12 +63,14 @@ def main():
             raise ValueError("Source asset exceeds GitHub's per-file limit")
         assets.append((path, expected))
     assets.append((folder / "SHA256SUMS.txt", digest(folder / "SHA256SUMS.txt")))
-    credential = subprocess.run(["git", "credential", "fill"], input="protocol=https\nhost=github.com\n\n",
-        text=True, capture_output=True, env=dict(os.environ, GIT_TERMINAL_PROMPT="0", GCM_INTERACTIVE="Never"))
-    fields = dict(line.split("=", 1) for line in credential.stdout.splitlines() if "=" in line)
-    if credential.returncode or not fields.get("password"):
-        raise RuntimeError("The existing GitHub credential helper is unavailable")
-    token = fields["password"]
+    token = os.environ.get("GITHUB_TOKEN")
+    if not token:
+        credential = subprocess.run(["git", "credential", "fill"], input="protocol=https\nhost=github.com\n\n",
+            text=True, capture_output=True, env=dict(os.environ, GIT_TERMINAL_PROMPT="0", GCM_INTERACTIVE="Never"))
+        fields = dict(line.split("=", 1) for line in credential.stdout.splitlines() if "=" in line)
+        token = fields.get("password") if credential.returncode == 0 else None
+    if not token:
+        raise RuntimeError("GitHub authentication is unavailable")
     opener = urllib.request.build_opener(NoRedirect)
     def api(method, path, data=None, allow_missing=False):
         request = urllib.request.Request("https://api.github.com/repos/" + REPOSITORY + path,
@@ -84,6 +86,11 @@ def main():
                 return None
             raise RuntimeError("GitHub source-release request failed (HTTP " + str(error.code) + ")") from None
     release = api("GET", "/releases/tags/" + TAG, allow_missing=True)
+    if release is None:
+        drafts = [item for item in api("GET", "/releases?per_page=100") if item["tag_name"] == TAG]
+        if len(drafts) > 1:
+            raise ValueError("Multiple source drafts use this tag")
+        release = drafts[0] if drafts else None
     body = ("Corresponding sources and retained engine build input for the Citrus 0.3.2 offline installer candidate.\n\n"
             "Citrus source commit: " + manifest["git_commit"] + ".\n\n"
             "Download all Sources ZIPs and the numbered FFmpeg source-cache parts. See BUILDING-SOURCES.txt for extraction and rebuilding, "
