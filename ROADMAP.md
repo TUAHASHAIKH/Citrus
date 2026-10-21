@@ -16,6 +16,10 @@ The 0.3.2 installer passed all 71 advertised worker profiles, shell/tray checks 
 
 The installer is unsigned. Publishing its setup file as a GitHub Release asset is the next distribution step. The existing source-only release must remain available alongside it.
 
+## Installer compression validation
+
+A local compression-only candidate reduced the existing 0.3.2 setup from 405.5 MiB to 320.3 MiB (21.0%) with the exact same payload. Shell checks and install, installed-app regression, reinstall and uninstall checks passed. Installed size is unchanged. The published installer is preserved; the candidate remains under artifacts/compression-check and has not been published as a new version.
+
 ## Next priorities
 
 - Broader Explorer/Desktop drag testing across mixed-DPI monitors, accessibility settings and privilege boundaries.

@@ -110,7 +110,7 @@ Build-machine requirements: Python 3.13 x64, LibreOffice, Inno Setup 6.7.3, and 
 .\tools\Test-TrayLifecycle.ps1
 ```
 
-The setup is written to `artifacts/setup/Citrus-Setup-0.3.2-x64.exe`. Source collection and verification must finish before a release build; `-PrepareOnly` stages and tests a development payload without compiling setup. Source/license tools under `tools/` and the pinned source-release workflow retain the corresponding sources, patches, build instructions and integrity manifests.
+The setup is written to `artifacts/setup/Citrus-Setup-0.3.2-x64.exe`. Setup builds use lossless LZMA2 maximum compression; this reduces download size, not installed size or conversion quality. Source collection and verification must finish before a release build; `-PrepareOnly` stages and tests a development payload without compiling setup. Source/license tools under `tools/` and the pinned source-release workflow retain the corresponding sources, patches, build instructions and integrity manifests.
 
 ## Validation
 
