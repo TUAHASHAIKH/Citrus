@@ -14,11 +14,11 @@
 
 The 0.3.2 installer passed all 71 advertised worker profiles, shell/tray checks and local install/regression/reinstall/uninstall checks. The maintainer reports successful installation and use on a friend's Windows laptop. Its Windows version and individual acceptance cases were not recorded; this is not a complete compatibility certification.
 
-The installer is unsigned. Publishing its setup file as a GitHub Release asset is the next distribution step. The existing source-only release must remain available alongside it.
+The installer is unsigned. Its setup file is published as a GitHub Release asset. The existing source-only release must remain available alongside it.
 
 ## Installer compression validation
 
-A local compression-only candidate reduced the existing 0.3.2 setup from 405.5 MiB to 320.3 MiB (21.0%) with the exact same payload. Shell checks and install, installed-app regression, reinstall and uninstall checks passed. Installed size is unchanged. The published installer is preserved; the candidate remains under artifacts/compression-check and has not been published as a new version.
+The published compression-only update reduced the existing 0.3.2 setup from 405.5 MiB to 320.3 MiB (21.0%) with the exact same payload. Shell checks and install, installed-app regression, reinstall and uninstall checks passed. Installed size is unchanged. The compressed installer and its matching checksum replaced the assets in the existing v0.3.2 public beta release; the application version and payload remain unchanged. The original installer remains locally under artifacts/setup, and the compressed copy is under artifacts/compression-check. Additional-PC testing of this repackaged installer is still pending.
 
 ## Next priorities
 
