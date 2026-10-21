@@ -53,3 +53,7 @@ Desktop.ini
 
 # Generated sample files for recording the product demo
 /Citrus Demo/
+
+# Private screen recordings and generated launch videos
+/CLIPS FOR VIDEO/
+/brag-output*/
