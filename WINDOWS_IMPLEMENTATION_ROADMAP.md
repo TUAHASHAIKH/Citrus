@@ -4,6 +4,12 @@ Research date: 20 October 2026. The original proposal follows the implementation
 
 ## Current implementation checkpoint
 
+### Offline source and license packaging (0.3.2)
+
+The release uses pinned BtbN FFmpeg with its exact dependency source cache and build scripts. Source materials also cover Python distributions, HEIF native libraries and runtimes, lxml's static iconv dependencies, MuPDF, LibreOffice and all 149 external archives, and Inno Setup. Hash checks bind these materials to the payload. Setup includes full upstream notices and Microsoft runtime terms. Release builds use licensed Visual Studio Community. The dedicated source-only GitHub release must finish publication before setup distribution. The pinned FFmpeg requires Windows 10 22H2 or Windows 11 x64.
+
+Developer-machine checks do not replace clean-machine acceptance. A friend's fresh Windows PC is still needed; signing remains unconfigured.
+
 ### PDF-to-Word layout correction (0.3.1)
 
 The Word route now uses pinned pdf2docx 0.5.13 to reconstruct editable text styles, paragraph spacing, tables, images and page geometry instead of writing extracted text into default paragraphs. Explicit page anchors preserve leading/blank/table-only page boundaries; parsing errors fail the conversion rather than silently skipping pages. Scan-only image pages return an OCR requirement. Regression fixtures inspect DOCX structure and render it back through LibreOffice to verify page count, blank pages and orientation. Exact visual equivalence is not promised for arbitrary PDFs or missing fonts.

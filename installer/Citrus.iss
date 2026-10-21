@@ -4,7 +4,7 @@
 #ifndef ReleaseOutput
   #error ReleaseOutput must be specified
 #endif
-#define Version "0.3.1"
+#define Version "0.3.2"
 
 [Setup]
 AppId={{8BA05164-740A-4B45-A8B2-93D589747B51}
@@ -18,12 +18,12 @@ DefaultGroupName=Citrus
 PrivilegesRequired=lowest
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
-MinVersion=10.0.19041
+MinVersion=10.0.19045
 OutputDir={#ReleaseOutput}
 OutputBaseFilename=Citrus-Setup-{#Version}-x64
 SetupIconFile=..\assets\citrus.ico
 UninstallDisplayIcon={app}\Citrus.exe
-LicenseFile=..\LICENSE
+LicenseFile={#Payload}\INSTALLER_LICENSE.txt
 Compression=lzma2/fast
 SolidCompression=yes
 WizardStyle=modern

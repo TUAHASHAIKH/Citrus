@@ -53,7 +53,7 @@ Processing uses local engines and does not intentionally upload files. Cloud pla
 
 ## Build and engine setup
 
-The C# shell uses Windows Forms and Windows' .NET Framework compiler. Native image workers work without Python. The expanded catalog uses Python 3.13, local packages, FFmpeg, and optional LibreOffice. This machine has these engines installed.
+The C# shell uses Windows Forms and targets .NET Framework. Builds prefer Visual Studio's compiler and retain the Windows Framework compiler as a development fallback. Native image workers work without Python. The expanded catalog uses Python 3.13, local packages, FFmpeg, and optional LibreOffice. This machine has these engines installed.
 
 ~~~powershell
 # On another machine, install Python, then provision local dependencies:
@@ -78,9 +78,9 @@ Source modules are under src/; engine code and pinned requirements under engines
 
 ## Windows installer
 
-The local candidate is `artifacts/setup/Citrus-Setup-0.3.1-x64.exe`. Exit older development copies before installing. Keep sign-in startup selected to launch Citrus into the tray automatically. Settings and converted user files survive uninstall. Windows controls whether the icon appears beside the clock or in the overflow menu.
+The local candidate is `artifacts/setup/Citrus-Setup-0.3.2-x64.exe`. Exit older development copies before installing. Keep sign-in startup selected to launch Citrus into the tray automatically. Settings and converted user files survive uninstall. Windows controls whether the icon appears beside the clock or in the overflow menu. The tray's **Licenses and source** entry opens the installed notices and Citrus license.
 
-The setup targets Windows 10 build 19041+ and Windows 11 x64 and bundles Python, conversion libraries, FFmpeg and LibreOffice. Its Microsoft VC++ prerequisite requests elevation if a compatible runtime is missing; Citrus itself runs without elevation. ARM64 is untested.
+The setup targets Windows 10 22H2 (build 19045+) and Windows 11 x64 and bundles Python, conversion libraries, FFmpeg and LibreOffice. Its Microsoft VC++ prerequisite requests elevation if a compatible runtime is missing; Citrus itself runs without elevation. ARM64 is untested.
 
 ```powershell
 # Build machine: Python 3.13 x64, LibreOffice and Inno Setup 6 required.
@@ -91,6 +91,10 @@ The setup targets Windows 10 build 19041+ and Windows 11 x64 and bundles Python,
 
 The setup checks cover isolated installation on the developer machine, installed-app regressions, reinstall/uninstall and real tray startup/single-instance/shutdown behavior. Generated output and packaging caches can be rebuilt. `.engines/python` is required by the current manual app; do not remove it without provisioning a replacement runtime.
 
-Before public installer distribution, finish matching third-party source/build materials and clean Windows testing. `tools/Collect-Release-Sources.py` can regenerate source archives and notices for review; collection alone is not compliance clearance. In particular, verify the exact Gyan FFmpeg build and native dependencies of PyMuPDF/MuPDF, HEIF wheels, Pillow/lxml and LibreOffice. Signing is not configured, so Windows may warn about the unsigned installer.
+The 0.3.2 payload replaces the Gyan executable with a pinned BtbN FFmpeg 8.1 build identified in `engines/ffmpeg-release.json`. It excludes the imageio-ffmpeg wheel and OpenCV's unused FFmpeg video plugin; media conversion uses the standalone executable. All 71 advertised profiles pass with this replacement. The development environment still supports imageio-ffmpeg as a fallback.
+
+Matching sources, native dependencies, patches and build instructions are packaged for [Citrus 0.3.2](https://github.com/TUAHASHAIKH/Citrus/releases/tag/citrus-sources-0.3.2). Confirm every source asset is published before distributing setup. Source downloads are separate from the fully offline installer. The source release includes integrity manifests, extraction instructions and retained FFmpeg build input because its publisher expires daily builds.
+
+Release builds use the installed Visual Studio Community C# compiler under its accepted license. Microsoft's unmodified signed runtime remains separately licensed; setup displays its complete terms alongside Citrus's AGPL. Rebuilding redistributors must obtain their own applicable redistribution grant. Full native notices are indexed under licenses/index.json, and installed SOURCE_INFORMATION.txt links the matching sources. The source collection, verification, notice collection, packaging and publishing tools are under tools/. Signing is not configured, so Windows may warn about the unsigned installer. Clean Windows testing remains pending.
 
 Fresh-machine acceptance remains untested: install without developer tools or preinstalled engines, verify prerequisite acceptance/decline, sign-in startup, Explorer/Desktop Shift-drag at different DPI settings, offline conversions, cancellation, upgrade/uninstall while converting and preservation of originals. Do not label unobserved cases as passed. No account, payments, hosted conversion or automatic updater is implemented.

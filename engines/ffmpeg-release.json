@@ -1,0 +1,19 @@
+{
+  "publisher": "BtbN/FFmpeg-Builds",
+  "release": "autobuild-2026-10-20-13-08",
+  "persistent_release": "https://github.com/TUAHASHAIKH/Citrus/releases/download/citrus-sources-0.3.2/",
+  "version": "n8.1.3-18-g46d899d7a0",
+  "license": "GPL-3.0-or-later; retain each bundled library's terms",
+  "binary": {
+    "file": "ffmpeg-n8.1.3-18-g46d899d7a0-win64-gpl-8.1.zip",
+    "sha256": "4101fe0a2f4a54039b125c4ca22ad1b8403ecc578383b2219c114a06ca599999"
+  },
+  "ffmpeg_commit": "46d899d7a02bc63237472cc4897258d5ddf274ac",
+  "build_scripts_commit": "63ac3265b0789ea16c7b1f8351cd2ad195a28722",
+  "workflow_run": 39420836791,
+  "dependency_sources": {
+    "artifact": 12263308818,
+    "file": "ffmpeg-dependency-cache.zip",
+    "sha256": "054edfdeee8b4050bfe86961857a232edc4f95db008b77a0ec67954a8bf7b2fa"
+  }
+}
