@@ -4,21 +4,21 @@
 
 **Drag. Tap Shift. Convert.** An open-source, offline file converter for Windows with a format wheel beside your cursor.
 
-## [Download Citrus for Windows](https://github.com/TUAHASHAIKH/Citrus/releases/download/v0.3.2/Citrus-Setup-0.3.2-x64.exe)
+## Citrus for Windows
 
 **Version 0.3.2 · Public beta · Windows 10 22H2 or Windows 11 · x64**
 
-[Release notes](https://github.com/TUAHASHAIKH/Citrus/releases/tag/v0.3.2) · [Report a problem](https://github.com/TUAHASHAIKH/Citrus/issues) · [Contribute](#contributing)
+[Report a problem](https://github.com/TUAHASHAIKH/Citrus/issues) · [Contribute](#contributing)
 
 ## Install in three steps
 
-1. **[Download the installer](https://github.com/TUAHASHAIKH/Citrus/releases/download/v0.3.2/Citrus-Setup-0.3.2-x64.exe)** — choose `Citrus-Setup-0.3.2-x64.exe`.
+1. Open this repository’s **Releases** section, select **Citrus 0.3.2 — Public Beta**, and find `Citrus-Setup-0.3.2-x64.exe` under **Assets**.
 2. **Run the downloaded file** and follow setup. Leave **Start Citrus when I sign in to Windows** selected if you want it available automatically.
 3. **Find the orange Citrus icon beside the clock.** If it is hidden, open the system tray's **^** menu.
 
 Everything needed for conversion is bundled. You do not need Python, FFmpeg, LibreOffice or any developer tools. Installation and conversion work offline. The Microsoft runtime prerequisite may request administrator approval.
 
-**Windows warning:** this public beta is unsigned, so Windows may display a security warning. Download from this repository's release and use its [SHA256SUMS.txt](https://github.com/TUAHASHAIKH/Citrus/releases/download/v0.3.2/SHA256SUMS.txt) to verify the file.
+**Windows warning:** this public beta is unsigned, so Windows may display a security warning. Download from this repository's release and use its `SHA256SUMS.txt` to verify the file.
 
 You only need the **setup `.exe`** to install Citrus. The source ZIPs and engine archives are for developers.
 
@@ -131,4 +131,4 @@ For bug reports, include your Windows version, Citrus version, file type, expect
 
 Citrus is licensed under **AGPL-3.0**. See [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-The [0.3.2 corresponding-source release](https://github.com/TUAHASHAIKH/Citrus/releases/tag/citrus-sources-0.3.2) supplies matching sources, native dependencies, patches and build instructions with verified SHA256 manifests. These developer downloads are separate from the offline installer and are not needed to use Citrus. Installed notices are available through **Licenses and source** in the tray menu. Microsoft runtime components retain their separate proprietary terms.
+The separate **Citrus 0.3.2 corresponding sources and engine archive** entry in the repository’s Releases section supplies matching sources, native dependencies, patches and build instructions with verified SHA256 manifests. These developer downloads are separate from the offline installer and are not needed to use Citrus. Installed notices are available through **Licenses and source** in the tray menu. Microsoft runtime components retain their separate proprietary terms.
