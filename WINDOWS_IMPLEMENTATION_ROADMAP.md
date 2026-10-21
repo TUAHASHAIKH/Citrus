@@ -6,9 +6,9 @@ Research date: 20 October 2026. The original proposal follows the implementation
 
 ### Offline source and license packaging (0.3.2)
 
-The release uses pinned BtbN FFmpeg with its exact dependency source cache and build scripts. Source materials also cover Python distributions, HEIF native libraries and runtimes, lxml's static iconv dependencies, MuPDF, LibreOffice and all 149 external archives, and Inno Setup. Hash checks bind these materials to the payload. Setup includes full upstream notices and Microsoft runtime terms. Release builds use licensed Visual Studio Community. The dedicated source-only GitHub release must finish publication before setup distribution. The pinned FFmpeg requires Windows 10 22H2 or Windows 11 x64.
+The release uses pinned BtbN FFmpeg with its exact dependency source cache and build scripts. Source materials also cover Python distributions, HEIF native libraries and runtimes, lxml's static iconv dependencies, MuPDF, LibreOffice and all 149 external archives, and Inno Setup. Hash checks bind these materials to the payload. Setup includes full upstream notices and Microsoft runtime terms. Release builds use licensed Visual Studio Community. The dedicated source-only GitHub release is published at https://github.com/TUAHASHAIKH/Citrus/releases/tag/citrus-sources-0.3.2 with verified asset digests. The pinned FFmpeg requires Windows 10 22H2 or Windows 11 x64.
 
-Developer-machine checks do not replace clean-machine acceptance. A friend's fresh Windows PC is still needed; signing remains unconfigured.
+The final 0.3.2 candidate passed all 71 advertised worker profiles, shell/tray checks and isolated install/regression/reinstall/uninstall checks on the developer machine. Installed license/source materials were checked. These checks do not replace clean-machine acceptance. A friend's fresh Windows PC is still needed; signing remains unconfigured.
 
 ### PDF-to-Word layout correction (0.3.1)
 
