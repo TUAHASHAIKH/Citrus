@@ -4,29 +4,40 @@
 
 **Drag. Tap Shift. Convert.** An open-source, offline file converter for Windows with a format wheel beside your cursor.
 
-[Downloads & releases](https://github.com/TUAHASHAIKH/Citrus/releases) · [Report a bug](https://github.com/TUAHASHAIKH/Citrus/issues) · [Contribute](#contributing) · [Roadmap](ROADMAP.md)
+## [Download Citrus for Windows](https://github.com/TUAHASHAIKH/Citrus/releases/download/v0.3.2/Citrus-Setup-0.3.2-x64.exe)
 
-## Install
+**Version 0.3.2 · Public beta · Windows 10 22H2 or Windows 11 · x64**
 
-Requires **Windows 10 22H2 (19045+) or Windows 11, x64**.
+[Release notes](https://github.com/TUAHASHAIKH/Citrus/releases/tag/v0.3.2) · [Report a problem](https://github.com/TUAHASHAIKH/Citrus/issues) · [Contribute](#contributing)
 
-The fully offline **0.3.2 installer is prepared but has not yet been uploaded to Releases**. The existing corresponding-source release contains developer materials, not the Citrus setup file. Once published, the installer will be available from the releases link above.
+## Install in three steps
 
-Run the setup file and leave **Start Citrus when I sign in to Windows** selected if you want automatic startup. Citrus runs in the system tray; Windows may place its icon in the overflow menu. Python, FFmpeg and LibreOffice are bundled; users do not need to install development tools. The Microsoft runtime prerequisite may request administrator approval.
+1. **[Download the installer](https://github.com/TUAHASHAIKH/Citrus/releases/download/v0.3.2/Citrus-Setup-0.3.2-x64.exe)** — choose `Citrus-Setup-0.3.2-x64.exe`.
+2. **Run the downloaded file** and follow setup. Leave **Start Citrus when I sign in to Windows** selected if you want it available automatically.
+3. **Find the orange Citrus icon beside the clock.** If it is hidden, open the system tray's **^** menu.
 
-The installer is unsigned. Verify downloads against the release's SHA256SUMS.txt. Installation and conversion work offline.
+Everything needed for conversion is bundled. You do not need Python, FFmpeg, LibreOffice or any developer tools. Installation and conversion work offline. The Microsoft runtime prerequisite may request administrator approval.
 
-## Use Citrus
+**Windows warning:** this public beta is unsigned, so Windows may display a security warning. Download from this repository's release and use its [SHA256SUMS.txt](https://github.com/TUAHASHAIKH/Citrus/releases/download/v0.3.2/SHA256SUMS.txt) to verify the file.
 
-1. Drag a file in Explorer or on the desktop.
-2. Tap and release **Shift** while continuing to hold the mouse button.
-3. Drop onto a named format in the wheel. **Escape** cancels.
+You only need the **setup `.exe`** to install Citrus. The source ZIPs and engine archives are for developers.
 
-Hold over **More →** for about 0.65 seconds to see additional choices; move away before using More again. The center and gaps are neutral.
+## Convert your first file
 
-Open Citrus from the Start menu for **Choose files → Format / action → Convert**. Closing the window keeps it in the tray. Right-click its tray icon for settings, engine status, cancellation, startup preferences and Exit.
+1. **Drag a JPG** from a folder or your desktop. Keep holding the mouse button.
+2. **Tap and release Shift.** The conversion wheel appears beside your cursor.
+3. **Move onto PNG and release the mouse button.** Your PNG is saved beside the JPG.
 
-Outputs are saved beside the original files. Existing files are never overwritten.
+Your original file stays untouched. Existing files are never overwritten; new outputs receive numbered names when needed. Use the same steps for other supported file types.
+
+**Prefer a normal window?** Open **Citrus** from the Start menu, then use **Choose files → Format / action → Convert**.
+
+## Everyday controls
+
+- **Cancel the wheel:** press Escape.
+- **See more formats:** hover over **More →** for about 0.65 seconds. Move away before using More again; drop onto a named format to convert.
+- **Settings or quit:** right-click the Citrus tray icon for settings, startup preferences, engine status, cancellation and Exit.
+- **Close the window:** Citrus stays available in the tray.
 
 ## Supported conversions
 
