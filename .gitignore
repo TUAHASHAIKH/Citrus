@@ -50,3 +50,6 @@ Desktop.ini
 *.key
 *.pem
 *.snk
+
+# Generated sample files for recording the product demo
+/Citrus Demo/
