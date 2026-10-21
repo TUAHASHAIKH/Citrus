@@ -11,6 +11,22 @@ TestResults/
 *.log
 *.tmp
 
+# Distribution files belong in GitHub Releases, not source control.
+*.exe
+*.dll
+*.msi
+*.msix
+*.msixbundle
+*.appx
+*.appxbundle
+*.nupkg
+*.whl
+*.zip
+*.7z
+*.tar
+*.tar.gz
+*.tar.xz
+
 # Manual test folder: retain instructions and the intentionally public fixture only.
 Try Citrus/*
 !Try Citrus/START HERE.txt
@@ -32,3 +48,5 @@ Desktop.ini
 *.pfx
 *.p12
 *.key
+*.pem
+*.snk

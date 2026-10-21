@@ -1,20 +1,34 @@
 # Citrus
 
-An offline Windows converter with a glass-style interface and a format wheel beside your cursor.
-
 <img src="assets/citrus.png" alt="Citrus logo" width="96">
 
-**Open-source development preview.** Source is available here; the full installer has not been published. Local checks have passed, but clean-Windows acceptance and third-party source review remain open.
+**Drag. Tap Shift. Convert.** An open-source, offline file converter for Windows with a format wheel beside your cursor.
 
-Licensed under **AGPL-3.0**; see [LICENSE](LICENSE) and [third-party notices](THIRD_PARTY_NOTICES.md).
+[Downloads & releases](https://github.com/TUAHASHAIKH/Citrus/releases) · [Report a bug](https://github.com/TUAHASHAIKH/Citrus/issues) · [Contribute](#contributing) · [Roadmap](ROADMAP.md)
 
-## Use it
+## Install
 
-Start Citrus, then drag a file, tap **Shift**, release Shift while keeping the mouse held, and drop onto a named wedge. The hovered choice turns orange. Hold over **More →** for about 0.65 seconds to cycle to the next page; move away before using More again. The center and gaps are neutral. Escape cancels.
+Requires **Windows 10 22H2 (19045+) or Windows 11, x64**.
 
-Double-click **Try Citrus/Citrus.exe** for the file picker: **Choose files… → Format / action → Convert**. Closing the window keeps Citrus in the tray. Right-click the orange-and-leaf tray icon for settings, engine status, cancel-all, output-folder access, Windows startup, and Exit.
+The fully offline **0.3.2 installer is prepared but has not yet been uploaded to Releases**. The existing corresponding-source release contains developer materials, not the Citrus setup file. Once published, the installer will be available from the releases link above.
 
-## Conversions and tools
+Run the setup file and leave **Start Citrus when I sign in to Windows** selected if you want automatic startup. Citrus runs in the system tray; Windows may place its icon in the overflow menu. Python, FFmpeg and LibreOffice are bundled; users do not need to install development tools. The Microsoft runtime prerequisite may request administrator approval.
+
+The installer is unsigned. Verify downloads against the release's SHA256SUMS.txt. Installation and conversion work offline.
+
+## Use Citrus
+
+1. Drag a file in Explorer or on the desktop.
+2. Tap and release **Shift** while continuing to hold the mouse button.
+3. Drop onto a named format in the wheel. **Escape** cancels.
+
+Hold over **More →** for about 0.65 seconds to see additional choices; move away before using More again. The center and gaps are neutral.
+
+Open Citrus from the Start menu for **Choose files → Format / action → Convert**. Closing the window keeps it in the tray. Right-click its tray icon for settings, engine status, cancellation, startup preferences and Exit.
+
+Outputs are saved beside the original files. Existing files are never overwritten.
+
+## Supported conversions
 
 | Family | Supported operations |
 |---|---|
@@ -29,9 +43,10 @@ Double-click **Try Citrus/Citrus.exe** for the file picker: **Choose files… �
 | Archives | ZIP/TAR/TAR.GZ/GZIP/TGZ repacking and extraction; arbitrary files/folders into ZIP |
 | File actions | Copy path, copy files, show folder, open Terminal |
 
-The runtime catalog hides profiles whose required local engines/encoders are unavailable. Mixed batches use the intersection of supported routes. Aggregate operations such as PDF merging require multiple files; they save one combined output beside the first selected item. File actions work for folders and unsupported formats too.
 
-## Fidelity and limits
+Available choices depend on the selected files and installed encoders. Mixed batches show their shared supported routes. Combined outputs are saved beside the first selected file.
+
+## Known limitations
 
 - Originals are preserved. Output names gain numeric suffixes instead of overwriting existing files. Explicit clipboard/terminal actions do not create converted files.
 - PNG/TIFF support alpha. JPG/BMP place transparency on white. Metadata is not copied; archival color/high-bit-depth fidelity is not promised. Multi-frame image routes reject animation or multiple pages rather than discarding frames; use a media route for animated GIFs.
@@ -41,62 +56,68 @@ The runtime catalog hides profiles whose required local engines/encoders are una
 - PDF compression may not shrink every file. Multi-page exports produce a new folder.
 - RAR, Apple Pages, AirDrop, interactive crop/annotation/redaction, OCR and full Tangerine parity remain unfinished. No universal “every format to every format” claim is made.
 
-## Background operation and jobs
 
-The window and wheel use rounded controls, translucent tints, gradients and fine highlights. Supported Windows 11 systems also request the native transient backdrop and extended glass frame; appearance depends on Windows composition/transparency settings. Older systems and high contrast use a readable fallback.
+Settings are stored in `%LOCALAPPDATA%\Citrus\settings.json`. The queue is held in memory and does not recover after a crash or restart. Processing uses local engines; cloud placeholders and network shares can still require their storage provider or network. No accounts, subscriptions or automatic updater are implemented.
 
-Settings persist in %LOCALAPPDATA%\Citrus\settings.json: Shift/Alt/Control trigger, pause, JPEG quality, Dark/Light/System appearance, reduced animation. Sign-in startup uses the current user's Windows Run key; keep the project and app folders in place.
+## Build from source
 
-Conversions run in isolated worker processes. Windows Job Objects terminate their children on cancellation or app exit. The queue holds up to 20 waiting batches, with one active batch and per-file progress. Cancel clears pending work and stops the current worker. Worker staging is beside the destination for non-overwriting atomic publication. The queue is in memory: crash/reboot recovery, detailed history/retry and duration-based media progress remain future work.
-
-Processing uses local engines and does not intentionally upload files. Cloud placeholders or UNC files may require their storage provider/network. Initial engine installation downloads software; conversions do not require that download step again.
-
-## Build and engine setup
-
-The C# shell uses Windows Forms and targets .NET Framework. Builds prefer Visual Studio's compiler and retain the Windows Framework compiler as a development fallback. Native image workers work without Python. The expanded catalog uses Python 3.13, local packages, FFmpeg, and optional LibreOffice. This machine has these engines installed.
-
-~~~powershell
-# On another machine, install Python, then provision local dependencies:
-.\tools\Install-Engines.ps1 -WithOffice
-
-# Exit Citrus via the tray before overwriting its executable:
-.\build.ps1
-& '.\Try Citrus\Citrus.exe'
-~~~
-
-The build writes engine/worker.py and a machine-local engine/runtime.json next to the executable. Third-party packages remain in the ignored .engines directory or the installed Python environment; this is a development installation, not a standalone redistributable installer. See THIRD_PARTY_NOTICES.md.
-
-## Checks
-
-~~~powershell
-.\tools\Test.ps1 -AllEngines
-~~~
-
-Builds and fixtures go to temporary directories, keeping Try Citrus clean. Checks cover original image behavior, glass/layout controls, catalog intersection, six-wedge geometry, settings, source preservation, collision handling, Unicode/space-containing paths, worker errors/cleanup, process-tree cancellation, queued background jobs, and real output from every advertised worker profile. Each profile is exercised with a generated representative input, not every possible source/target pair or real-world layout.
-
-Source modules are under src/; engine code and pinned requirements under engines/. Progress and remaining work are recorded in WINDOWS_IMPLEMENTATION_ROADMAP.md.
-
-## Windows installer
-
-The local candidate is `artifacts/setup/Citrus-Setup-0.3.2-x64.exe`. Exit older development copies before installing. Keep sign-in startup selected to launch Citrus into the tray automatically. Settings and converted user files survive uninstall. Windows controls whether the icon appears beside the clock or in the overflow menu. The tray's **Licenses and source** entry opens the installed notices and Citrus license.
-
-The setup targets Windows 10 22H2 (build 19045+) and Windows 11 x64 and bundles Python, conversion libraries, FFmpeg and LibreOffice. Its Microsoft VC++ prerequisite requests elevation if a compatible runtime is missing; Citrus itself runs without elevation. ARM64 is untested.
+Use Windows and PowerShell. The shell is C# / Windows Forms targeting .NET Framework. Builds prefer Visual Studio's C# compiler, with the Windows Framework compiler as a development fallback. Expanded conversions need **Python 3.13 x64** and the local engines.
 
 ```powershell
-# Build machine: Python 3.13 x64, LibreOffice and Inno Setup 6 required.
+git clone https://github.com/TUAHASHAIKH/Citrus.git
+cd Citrus
+.\tools\Install-Engines.ps1 -WithOffice
+.\build.ps1
+& '.\Try Citrus\Citrus.exe'
+```
+
+Exit a development copy from its tray menu before rebuilding its executable. `Try Citrus` is a local manual-testing folder; its executable and runtime configuration are generated and excluded from Git. Keep its configured `.engines` runtime in place while using it.
+
+```powershell
+# Build into a temporary folder and run regression checks:
+.\tools\Test.ps1 -AllEngines
+```
+
+| Directory | Purpose |
+|---|---|
+| `src/` | Windows shell, tray, drag interaction, job control and native regression checks |
+| `engines/` | Conversion worker, pinned dependencies and worker tests |
+| `assets/` | App icon and README logo |
+| `installer/` | Inno Setup installer definition |
+| `tools/` | Build, test, engine provisioning and required source/license packaging |
+| `Try Citrus/` | Manual-testing instructions and public sample fixture; generated app ignored |
+
+Generated engines, installers, logs, conversion fixtures, source archives and local IDE files are excluded from Git.
+
+## Build the installer
+
+Build-machine requirements: Python 3.13 x64, LibreOffice, Inno Setup 6.7.3, and an applicable Visual Studio license for redistributing Microsoft's runtime. See [third-party notices](THIRD_PARTY_NOTICES.md).
+
+```powershell
 .\tools\Build-Setup.ps1
 .\tools\Test-Setup.ps1
 .\tools\Test-TrayLifecycle.ps1
 ```
 
-The setup checks cover isolated installation on the developer machine, installed-app regressions, reinstall/uninstall and real tray startup/single-instance/shutdown behavior. Generated output and packaging caches can be rebuilt. `.engines/python` is required by the current manual app; do not remove it without provisioning a replacement runtime.
+The setup is written to `artifacts/setup/Citrus-Setup-0.3.2-x64.exe`. Source collection and verification must finish before a release build; `-PrepareOnly` stages and tests a development payload without compiling setup. Source/license tools under `tools/` and the pinned source-release workflow retain the corresponding sources, patches, build instructions and integrity manifests.
 
-The 0.3.2 payload replaces the Gyan executable with a pinned BtbN FFmpeg 8.1 build identified in `engines/ffmpeg-release.json`. It excludes the imageio-ffmpeg wheel and OpenCV's unused FFmpeg video plugin; media conversion uses the standalone executable. All 71 advertised profiles pass with this replacement. The development environment still supports imageio-ffmpeg as a fallback.
+## Validation
 
-Matching sources, native dependencies, patches and build instructions are published in the [Citrus 0.3.2 source release](https://github.com/TUAHASHAIKH/Citrus/releases/tag/citrus-sources-0.3.2). The hosting workflow verified every uploaded asset against its SHA256 digest. Source downloads are separate from the fully offline installer. The source release includes integrity manifests, extraction instructions and retained FFmpeg build input because its publisher expires daily builds.
+Version 0.3.2 passed all 71 advertised worker profiles, shell/tray checks, installed license/source checks, installation, installed-app regressions, reinstall and uninstall on the developer machine. The maintainer also reports a successful installation and use on a friend's Windows laptop. That external test is user-reported; its Windows version and full interaction matrix were not recorded. Broader mixed-DPI, accessibility and application compatibility testing remains welcome.
 
-Release builds use the installed Visual Studio Community C# compiler under its accepted license. Microsoft's unmodified signed runtime remains separately licensed; setup displays its complete terms alongside Citrus's AGPL. Rebuilding redistributors must obtain their own applicable redistribution grant. Full native notices are indexed under licenses/index.json, and installed SOURCE_INFORMATION.txt links the matching sources. The source collection, verification, notice collection, packaging and publishing tools are under tools/. Signing is not configured, so Windows may warn about the unsigned installer. Clean Windows testing remains pending.
+## Contributing
 
-The 0.3.2 candidate passed all 71 advertised worker profiles, shell checks, tray lifecycle checks, installed license/source checks, installation, installed-app regressions, reinstall and uninstall on the developer machine on 21 October 2026. The source release contains the matching Citrus source commit and payload executable hash. A pinned GitHub workflow handles large source transfers from their original publishers; it does not upload the Citrus installer.
+Bug reports, conversion fixes, accessibility improvements and documentation contributions are welcome.
 
-Fresh-machine acceptance remains untested: install without developer tools or preinstalled engines, verify prerequisite acceptance/decline, sign-in startup, Explorer/Desktop Shift-drag at different DPI settings, offline conversions, cancellation, upgrade/uninstall while converting and preservation of originals. Do not label unobserved cases as passed. No account, payments, hosted conversion or automatic updater is implemented.
+1. Open an issue to discuss substantial changes.
+2. Fork the repository and create a focused branch.
+3. Keep originals safe, preserve tray/startup behavior, and run the relevant checks with `tools/Test.ps1`.
+4. Open a pull request explaining the change and how you tested it.
+
+For bug reports, include your Windows version, Citrus version, file type, expected behavior and reproduction steps. Share only files you have permission to publish. Keep engines, installers, generated test output, credentials and personal documents out of commits. Review [ROADMAP.md](ROADMAP.md) for planned work.
+
+## License and corresponding sources
+
+Citrus is licensed under **AGPL-3.0**. See [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+The [0.3.2 corresponding-source release](https://github.com/TUAHASHAIKH/Citrus/releases/tag/citrus-sources-0.3.2) supplies matching sources, native dependencies, patches and build instructions with verified SHA256 manifests. These developer downloads are separate from the offline installer and are not needed to use Citrus. Installed notices are available through **Licenses and source** in the tray menu. Microsoft runtime components retain their separate proprietary terms.
